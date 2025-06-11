@@ -151,3 +151,13 @@ sonar-project.properties
 
 ### CHANGELOG temporal ###
 CHANGELOG.tmp
+
+### Archivos Privados de Configuración ###
+# Documentos con credenciales reales - NUNCA subir
+CONFIGURACION_PRIVADA.md
+CREDENCIALES_*
+PASSWORDS_*
+CONFIG_PRIVADO_*
+ACCESOS_*
+SERVIDOR_*
+*_CONFIDENCIAL.*

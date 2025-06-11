@@ -64,13 +64,36 @@ src/main/java/com/hochschild/speed/back/
 
 ## ⚙️ Configuración e Instalación
 
-### Prerrequisitos
-- Java 8+
-- Maven 3.6+
-- SQL Server 2016+
-- Alfresco 5.0+ (opcional)
+### 📋 Prerrequisitos
+- **Java 8** (OBLIGATORIO - el proyecto NO funciona con versiones superiores)
+- **Maven 3.6+** 
+- **SQL Server 2016+**
+- **Alfresco 5.0+** (opcional)
 
-### Variables de Entorno
+⚠️ **IMPORTANTE:** Este proyecto requiere específicamente Java 8 debido a dependencias legacy (Spring Boot 1.5.8, Lombok 1.16.8).
+
+### 🛠️ Configuración de Entorno
+
+#### **Windows - Configuración Automática (Recomendado):**
+1. **Instalar Java 8**
+   - Descargar desde: https://adoptium.net/es/temurin/releases/?version=8
+   - Instalar normalmente (puede coexistir con otras versiones de Java)
+
+2. **Usar script automático**
+   ```bash
+   .\switch-to-java8.bat
+   ```
+   Este script configura automáticamente Java 8 y Maven para la sesión actual.
+
+#### **Configuración Manual:**
+```properties
+# Variables de Entorno (si no usas el script)
+JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-8.0.452.9-hotspot
+MAVEN_HOME=C:\apache-maven-3.9.10
+PATH=%JAVA_HOME%\bin;%MAVEN_HOME%\bin;%PATH%
+```
+
+### 📊 Variables de Entorno
 ```properties
 # Base de Datos
 DB_AUTH_URL=jdbc:sqlserver://localhost;databaseName=AUTH_DB
@@ -89,7 +112,7 @@ FRONTEND_URL=https://your-frontend-url
 ALFRESCO_URL=https://your-alfresco-url
 ```
 
-### Instalación
+### 🚀 Instalación
 
 1. **Clonar el repositorio**
    ```bash
@@ -98,13 +121,18 @@ ALFRESCO_URL=https://your-alfresco-url
    ```
 
 2. **Configurar base de datos**
-   - Copiar `src/main/resources/jdbc.properties.example` como `jdbc.properties`
-   - Actualizar las credenciales reales en `jdbc.properties`
+   - Actualizar `src/main/resources/jdbc.properties` con credenciales reales
    - Ejecutar scripts de base de datos (si están disponibles)
 
-3. **Instalar dependencias**
+3. **Compilar proyecto**
    ```bash
-   mvn clean install
+   # Opción 1: Usando script automático (Recomendado)
+   .\switch-to-java8.bat
+   # En la nueva ventana:
+   mvn clean compile
+   
+   # Opción 2: Maven directo (si tienes Java 8 configurado)
+   mvn clean compile
    ```
 
 4. **Ejecutar aplicación**
@@ -116,6 +144,38 @@ ALFRESCO_URL=https://your-alfresco-url
    ```
    http://localhost:8080/services/health
    ```
+
+### ⚠️ Comandos Correctos
+
+```bash
+# ✅ Comandos que SÍ funcionan:
+mvn clean compile        # Compilar proyecto
+mvn spring-boot:run      # Ejecutar aplicación  
+mvn test                # Ejecutar tests
+mvn package             # Crear WAR
+
+# ❌ Comandos que NO existen:
+mvn run                 # NO EXISTE
+.\mvnw.cmd              # Maven Wrapper está roto
+```
+
+### 🔍 Estado del Proyecto
+
+✅ **Funcional:**
+- Compila correctamente (820 archivos)
+- Ejecuta sin errores
+- Todas las dependencias se resuelven
+
+⚠️ **Warnings conocidos (no críticos):**
+- APIs internas de Java en `EncryptUtil.java`
+- Dependencias duplicadas en `pom.xml`
+- Maven Wrapper requiere reparación
+
+🛠️ **Para desarrollo use:**
+```bash
+.\switch-to-java8.bat    # Configurar entorno automáticamente
+mvn spring-boot:run      # Ejecutar para desarrollo
+```
 
 ## 🔗 Endpoints Principales
 
@@ -175,7 +235,30 @@ Configurado para permitir requests desde el frontend configurado en las variable
 
 ## 🔧 Configuración Avanzada
 
-### Perfiles de Ejecución
+### 🚀 Comandos de Desarrollo
+
+#### **Configuración inicial (una sola vez):**
+```bash
+# Windows - Configurar entorno automáticamente
+.\switch-to-java8.bat
+```
+
+#### **Comandos principales:**
+```bash
+# Compilar proyecto
+mvn clean compile
+
+# Ejecutar aplicación (desarrollo)
+mvn spring-boot:run
+
+# Ejecutar tests
+mvn test
+
+# Crear WAR para despliegue
+mvn package
+```
+
+#### **Perfiles de Ejecución:**
 ```bash
 # Desarrollo
 mvn spring-boot:run -Dspring.profiles.active=dev
@@ -185,6 +268,12 @@ mvn spring-boot:run -Dspring.profiles.active=prod
 
 # Testing
 mvn spring-boot:run -Dspring.profiles.active=test
+```
+
+#### **❌ Comandos que NO funcionan:**
+```bash
+mvn run                 # NO EXISTE - usar mvn spring-boot:run
+.\mvnw.cmd             # Maven Wrapper está roto - usar mvn directo
 ```
 
 ### Propiedades Principales
@@ -257,16 +346,18 @@ mvn jacoco:report
 
 ### ⚠️ Archivos Sensibles
 - **NUNCA** commitear archivos con credenciales reales
-- Usar los archivos `.example` como plantillas
 - Configurar variables de entorno para producción
-- Mantener el `.gitignore` actualizado
+- El `.gitignore` ya está configurado para proteger archivos sensibles
 
-### 📋 Archivos Protegidos
+### 📋 Archivos Protegidos (por .gitignore)
 ```
 src/main/resources/jdbc.properties       # Credenciales de BD
-src/main/resources/ldap.properties       # Configuración LDAP
+src/main/resources/ldap.properties       # Configuración LDAP  
 src/main/resources/mail.properties       # Credenciales de email
 src/main/resources/alfresco.properties   # URLs y tokens de Alfresco
+local-repo/                             # Dependencias locales
+*.key, *.crt, *.p12                     # Certificados
+application-*.properties                # Configuraciones por ambiente
 ```
 
 ### 🔐 Variables de Entorno Recomendadas
@@ -277,6 +368,25 @@ export DB_AUTH_PASSWORD="secure_password"
 export JWT_SECRET="your_super_secure_jwt_secret"
 export FRONTEND_URL="https://your-frontend-domain.com"
 ```
+
+### 🚨 Warnings Conocidos del Proyecto
+
+#### **APIs Internas de Java (No crítico):**
+```
+[WARNING] com.sun.org.apache.xerces.internal.impl.dv.util.Base64 
+is internal proprietary API and may be removed in a future release
+```
+**Ubicación:** `src/main/java/com/hochschild/speed/back/util/EncryptUtil.java`  
+**Impacto:** Bajo - funciona en Java 8, puede requerir cambio en versiones futuras
+
+#### **Dependencias Duplicadas (No crítico):**
+```
+[WARNING] 'dependencies.dependency.(groupId:artifactId:type:classifier)' must be unique:
+org.apache.poi:poi:jar -> version 5.2.3 vs ${org.apache.poi-version}
+net.sf.jxls:jxls-core:jar -> version 1.0.5 vs 1.0.6
+```
+**Ubicación:** `pom.xml` líneas 250 y 265  
+**Impacto:** Bajo - Maven usa la primera declaración encontrada
 
 ## ⚠️ Notas Importantes
 
@@ -304,5 +414,6 @@ Proyecto propietario de Hochschild Mining - Todos los derechos reservados.
 
 ---
 
-**Desarrollado con ❤️ por el Equipo de SPEED - Hochschild Mining** #   S p e e d - B a c k  
+**Desarrollado con ❤️ por el Equipo de SPEED - Hochschild Mining** #   S p e e d - B a c k 
+ 
  

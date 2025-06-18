@@ -293,7 +293,7 @@ public class ElaborarDocumentoServiceImpl implements ElaborarDocumentoService {
 						}
 						
 						StringBuilder correosInternosBuilder = new StringBuilder();
-						correosInternosBuilder.append("Enviar sus comentarios o revisi&oacute;n a los correos:<br/>");
+						correosInternosBuilder.append("Enviar sus comentarios o revisión a los correos:<br/>");
 						
 						if (correosPersonal != null && !correosPersonal.isEmpty()) {
 							for (String correo : correosPersonal) {

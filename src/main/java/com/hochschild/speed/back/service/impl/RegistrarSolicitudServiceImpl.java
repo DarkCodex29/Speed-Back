@@ -48,6 +48,8 @@ public class RegistrarSolicitudServiceImpl implements RegistrarSolicitudService 
     private final HcContratoRepository hcContratoRepository;
     private final ExpedienteRepository expedienteRepository;
     private final HcCompaniaRepository hcCompaniaRepository;
+    private final TipoDocumentoRepository tipoDocumentoRepository;
+    private final DocumentoRepository documentoRepository;
     private final EnviarNotificacionService enviarNotificacionService;
     private final CommonBusinessLogicService commonBusinessLogicService;
     private final RegistrarExpedienteService registrarExpedienteService;
@@ -71,6 +73,8 @@ public class RegistrarSolicitudServiceImpl implements RegistrarSolicitudService 
                                          HcContratoRepository hcContratoRepository,
                                          ExpedienteRepository expedienteRepository,
                                          HcCompaniaRepository hcCompaniaRepository,
+                                         TipoDocumentoRepository tipoDocumentoRepository,
+                                         DocumentoRepository documentoRepository,
                                          EnviarNotificacionService enviarNotificacionService,
                                          CommonBusinessLogicService commonBusinessLogicService,
                                          RegistrarExpedienteService registrarExpedienteService) {
@@ -92,6 +96,8 @@ public class RegistrarSolicitudServiceImpl implements RegistrarSolicitudService 
         this.hcContratoRepository = hcContratoRepository;
         this.expedienteRepository = expedienteRepository;
         this.hcCompaniaRepository = hcCompaniaRepository;
+        this.tipoDocumentoRepository = tipoDocumentoRepository;
+        this.documentoRepository = documentoRepository;
         this.enviarNotificacionService = enviarNotificacionService;
         this.commonBusinessLogicService = commonBusinessLogicService;
         this.registrarExpedienteService = registrarExpedienteService;
@@ -307,6 +313,14 @@ public class RegistrarSolicitudServiceImpl implements RegistrarSolicitudService 
 
         hcDocumentoLegalRepository.save(documentoLegal);
 
+        // CREAR DOCUMENTO EN TABLA DOCUMENTO PARA QUE APAREZCA EN EL FRONTEND
+        // Esto permite que se vea el documento con su número en la interfaz
+        if (documentoLegal.getContrato() != null) {
+            crearDocumentoContrato(expediente, documentoLegal.getResponsable(), documentoLegal.getNumero());
+        } else if (documentoLegal.getAdenda() != null) {
+            crearDocumentoAdenda(expediente, documentoLegal.getResponsable(), documentoLegal.getNumero());
+        }
+
         if (adenda != null) {
             adenda.setDocumentoLegal(documentoLegal);
             hcAdendaRepository.save(adenda);
@@ -359,6 +373,74 @@ public class RegistrarSolicitudServiceImpl implements RegistrarSolicitudService 
         responseModel.setMessage("Proceso exitoso");
         responseModel.setHttpSatus(HttpStatus.OK);
         return responseModel;
+    }
+
+    /**
+     * Actualiza el documento de tipo CONTRATO existente con el título completo
+     * En lugar de crear uno nuevo, actualiza el que ya tiene archivos
+     */
+    private void crearDocumentoContrato(Expediente expediente, Usuario responsable, String numero) {
+        try {
+            TipoDocumento tipoDocumento = tipoDocumentoRepository.obtenerTipoDocumentoPorNombre(Constantes.TIPO_DOCUMENTO_CONTRATO);
+            if (tipoDocumento != null) {
+                // BUSCAR DOCUMENTO EXISTENTE DEL MISMO TIPO EN EL EXPEDIENTE
+                List<Documento> documentosExistentes = documentoRepository.obtenerPorExpedienteYTipoDocumento(
+                    expediente.getId(), tipoDocumento.getId());
+                
+                if (!documentosExistentes.isEmpty()) {
+                    Documento documento = documentosExistentes.get(0);
+                    
+                    // VERIFICAR SI YA TIENE EL NÚMERO ASIGNADO (evitar duplicados)
+                    if (numero.equals(documento.getNumero())) {
+                        LOGGER.info("✅ Documento CONTRATO ya actualizado: " + documento.getTitulo());
+                        return; // YA ESTÁ ACTUALIZADO, NO HACER NADA
+                    }
+                    
+                    // ACTUALIZAR EL DOCUMENTO EXISTENTE (que ya tiene archivos)
+                    LOGGER.info("📝 Actualizando documento CONTRATO existente ID: " + documento.getId());
+                    documento.setNumero(numero);
+                    documento.setTitulo(Constantes.TIPO_DOCUMENTO_CONTRATO + " " + numero);
+                    
+                    documentoRepository.save(documento);
+                    LOGGER.info("✅ Documento CONTRATO guardado exitosamente: " + documento.getTitulo());
+                    
+                } else {
+                    LOGGER.warn("⚠️ No se encontró documento CONTRATO existente para actualizar");
+                }
+                
+            } else {
+                LOGGER.warn("⚠️ No se encontró el tipo de documento CONTRATO");
+            }
+        } catch (Exception e) {
+            LOGGER.error("❌ Error al actualizar documento CONTRATO: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Crea un documento de tipo ADENDA en la tabla DOCUMENTO
+     * para que aparezca en el frontend con el título completo
+     */
+    private void crearDocumentoAdenda(Expediente expediente, Usuario responsable, String numero) {
+        try {
+            TipoDocumento tipoDocumento = tipoDocumentoRepository.obtenerTipoDocumentoPorNombre(Constantes.TIPO_DOCUMENTO_ADENDA);
+            if (tipoDocumento != null) {
+                Documento documento = new Documento();
+                documento.setTipoDocumento(tipoDocumento);
+                documento.setExpediente(expediente);
+                documento.setAutor(responsable);
+                documento.setFechaCreacion(new Date());
+                documento.setEstado(Constantes.ESTADO_ACTIVO);
+                documento.setNumero(numero);
+                documento.setTitulo(Constantes.TIPO_DOCUMENTO_ADENDA + " " + numero);
+                
+                documentoRepository.save(documento);
+                LOGGER.info("📄 Documento ADENDA creado exitosamente: " + documento.getTitulo());
+            } else {
+                LOGGER.warn("⚠️ No se encontró el tipo de documento ADENDA");
+            }
+        } catch (Exception e) {
+            LOGGER.error("❌ Error al crear documento ADENDA: " + e.getMessage());
+        }
     }
 
 }

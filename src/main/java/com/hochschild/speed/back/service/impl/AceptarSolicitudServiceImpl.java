@@ -197,11 +197,14 @@ public class AceptarSolicitudServiceImpl implements AceptarSolicitudService {
             documento.setFechaCreacion(new Date());
             documento.setFechaDocumento(new Date());
             documento.setNumero(numero);
+            LOGGER.info("✅ NUEVO DOCUMENTO CREADO: " + documento.getTitulo() + " (ID: " + expediente.getId() + ")");
         } else {
+            String tituloAnterior = documento.getTitulo();
             documento.setAutor(userLogged);
             documento.setTitulo(nombreTipoDocumento + " " + numero);
             documento.setFechaDocumento(new Date());
             documento.setNumero(numero);
+            LOGGER.info("✅ DOCUMENTO ACTUALIZADO: '" + tituloAnterior + "' → '" + documento.getTitulo() + "' (ID: " + documento.getId() + ")");
         }
         documentoRepository.save(documento);
     }

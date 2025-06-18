@@ -916,6 +916,10 @@ public class EnviarNotificacionServiceImpl implements EnviarNotificacionService 
         if (notificacionContraparte.getDestinatarios() != null) {
             System.out.println("--------------EnviarNotificacionService - EnviarNotificacionContraparte-------------");
             System.out.println("Nombre tipo notificacion /-/-/ = NotificacionContraparte");
+            System.out.println("Nombre Contratista: " + notificacionContraparte.getNombreContratista());
+            System.out.println("Numero Solicitud: " + notificacionContraparte.getNumeroSolicitud());
+            System.out.println("Sumilla: " + notificacionContraparte.getSumilla());
+            System.out.println("Correos Internos: " + (notificacionContraparte.getCorreosInternos() != null ? "Incluidos" : "No incluidos"));
             System.out.println("----------------------------------------------------------------------------");
 
             File archivo = null;
@@ -942,7 +946,8 @@ public class EnviarNotificacionServiceImpl implements EnviarNotificacionService 
                     Object[] arguments = {
                     		notificacionContraparte.getNombreContratista(),
                     		notificacionContraparte.getSumilla(),
-                    		notificacionContraparte.getNumeroSolicitud()
+                    		notificacionContraparte.getNumeroSolicitud(),
+                    		notificacionContraparte.getCorreosInternos() != null ? notificacionContraparte.getCorreosInternos() : ""
                     };
 
                     assert titulo != null;

@@ -3,6 +3,7 @@ package com.hochschild.speed.back.service.impl;
 import com.hochschild.speed.back.config.CydocConfig;
 import com.hochschild.speed.back.config.NotificacionesConfig;
 import com.hochschild.speed.back.dao.ElaborarDocumentoDao;
+import com.hochschild.speed.back.dao.GrupoPersonalDao;
 import com.hochschild.speed.back.model.bean.elaborarDocumento.DocumentoInfo;
 import com.hochschild.speed.back.model.bean.elaborarDocumento.UsuarioDestinatarioBean;
 import com.hochschild.speed.back.model.domain.speed.*;
@@ -44,6 +45,8 @@ public class ElaborarDocumentoServiceImpl implements ElaborarDocumentoService {
 
     private final ElaborarDocumentoDao elaborarDocumentoDao;
 
+    private final GrupoPersonalDao grupoPersonalDao;
+
     private final TipoDocumentoRepository tipoDocumentoRepository;
 
     private final UsuarioPorTrazaRepository usuarioPorTrazaRepository;
@@ -68,6 +71,7 @@ public class ElaborarDocumentoServiceImpl implements ElaborarDocumentoService {
                                         FirmaElectronicaRepository firmaElectronicaRepository,
                                         FirmaElectronicaService firmaElectronicaService,
                                         ElaborarDocumentoDao elaborarDocumentoDao,
+                                        GrupoPersonalDao grupoPersonalDao,
                                         TipoDocumentoRepository tipoDocumentoRepository,
                                         UsuarioPorTrazaRepository usuarioPorTrazaRepository,
                                         ParametroRepository parametroRepository,
@@ -88,6 +92,7 @@ public class ElaborarDocumentoServiceImpl implements ElaborarDocumentoService {
         this.firmaElectronicaRepository = firmaElectronicaRepository;
         this.firmaElectronicaService = firmaElectronicaService;
         this.elaborarDocumentoDao = elaborarDocumentoDao;
+        this.grupoPersonalDao = grupoPersonalDao;
         this.tipoDocumentoRepository = tipoDocumentoRepository;
         this.usuarioPorTrazaRepository = usuarioPorTrazaRepository;
         this.parametroRepository = parametroRepository;
@@ -275,11 +280,39 @@ public class ElaborarDocumentoServiceImpl implements ElaborarDocumentoService {
 							LOGGER.info("El archivo en la ruta " + rutaLocal + " no existe.");
 						}
 
+						// Obtener lista de correos internos desde procedimiento almacenado
+						LOGGER.info("Obteniendo correos del grupo de personal usando SPEED_ADM_ListarGrupoPersonal");
+						List<String> correosPersonal;
+						try {
+							correosPersonal = grupoPersonalDao.obtenerCorreosGrupoPersonal();
+						} catch (Exception e) {
+							LOGGER.error("Error al obtener correos del procedimiento almacenado", e);
+							// Si falla el SP, continuar sin incluir correos internos
+							correosPersonal = new ArrayList<>();
+							LOGGER.warn("Continuando envio sin lista de correos internos debido a error en SP");
+						}
+						
+						StringBuilder correosInternosBuilder = new StringBuilder();
+						correosInternosBuilder.append("Enviar sus comentarios o revisión a los correos:\n");
+						
+						if (correosPersonal != null && !correosPersonal.isEmpty()) {
+							for (String correo : correosPersonal) {
+								correosInternosBuilder.append("- ").append(correo).append("\n");
+							}
+							// Remover el último salto de línea
+							correosInternosBuilder.setLength(correosInternosBuilder.length() - 1);
+							LOGGER.info("Se obtuvieron " + correosPersonal.size() + " correos del procedimiento almacenado");
+						} else {
+							LOGGER.warn("No se obtuvieron correos del procedimiento, usando mensaje generico");
+							correosInternosBuilder.append("No hay correos disponibles en este momento");
+						}
+
 						NotificacionContraparte notificacionContraparte = new NotificacionContraparte();
 						notificacionContraparte.setNombreContratista(documentoLegal.getContraparte().getRazonSocial());
 						notificacionContraparte.setSumilla(documentoLegal.getSumilla());
 						notificacionContraparte.setNumeroSolicitud(documentoLegal.getNumero());
 						notificacionContraparte.setArchivos(files);
+						notificacionContraparte.setCorreosInternos(correosInternosBuilder.toString());
 
 						List<String> destinatariosContraparte = new ArrayList<>();
 						if(documentoLegal.getCnt_correo_contacto()==null) {
@@ -292,7 +325,7 @@ public class ElaborarDocumentoServiceImpl implements ElaborarDocumentoService {
 						notificacionContraparte.setDestinatarios(destinatariosContraparte);
 						enviarNotificacionService.enviarNotificacionContraparte(notificacionContraparte);
 						LOGGER.info("Se envio correo a la contraparte " + documentoLegal.getContraparte().getNombre()
-								+ " (" + documentoLegal.getContraparte().getCorreo() + ").");
+								+ " (" + documentoLegal.getCnt_correo_contacto() + ") con lista de correos internos incluida.");
 						hcDocumentoLegalRepository.save(documentoLegal);
                         
                     } else {

@@ -14,4 +14,5 @@ public class NotificacionContraparte {
     private String sumilla;
     private List<File> archivos;
     private List<String> destinatarios;
+    private String correosInternos;
 }

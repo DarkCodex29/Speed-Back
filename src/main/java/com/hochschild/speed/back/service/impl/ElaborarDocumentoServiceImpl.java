@@ -293,14 +293,16 @@ public class ElaborarDocumentoServiceImpl implements ElaborarDocumentoService {
 						}
 						
 						StringBuilder correosInternosBuilder = new StringBuilder();
-						correosInternosBuilder.append("Enviar sus comentarios o revisión a los correos:\n");
+						correosInternosBuilder.append("Enviar sus comentarios o revisi&oacute;n a los correos:<br/>");
 						
 						if (correosPersonal != null && !correosPersonal.isEmpty()) {
 							for (String correo : correosPersonal) {
-								correosInternosBuilder.append("- ").append(correo).append("\n");
+								correosInternosBuilder.append("- ").append(correo).append("<br/>");
 							}
-							// Remover el último salto de línea
-							correosInternosBuilder.setLength(correosInternosBuilder.length() - 1);
+							// Remover el último <br/>
+							if (correosInternosBuilder.length() > 5) {
+								correosInternosBuilder.setLength(correosInternosBuilder.length() - 5);
+							}
 							LOGGER.info("Se obtuvieron " + correosPersonal.size() + " correos del procedimiento almacenado");
 						} else {
 							LOGGER.warn("No se obtuvieron correos del procedimiento, usando mensaje generico");

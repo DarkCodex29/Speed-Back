@@ -346,14 +346,30 @@ public class ElaborarDocumentoServiceImpl implements ElaborarDocumentoService {
                             hcDocumentoLegalRepository.save(documentoLegal);
                         } else if (documento.getTipoDocumento().getNombre().equals(Constantes.TIPO_DOCUMENTO_BORRADORES) && destinatarios.size() > 0) {
                             // volver a vificar si es tipo borrador. modifica ubbicacion.
+                            try {
+                                String ubicacion = elaborarDocumentoDao.ubicacionUsuarioBean(destinatarios.get(0).getUsuario());
+                                LOGGER.info("Ubicacion obtenida del usuario: " + ubicacion);
+                                
+                                if (documentoLegal.getUbicacionDocumento() != null) {
+                                    String ubicacionActual = documentoLegal.getUbicacionDocumento().getValor();
+                                    LOGGER.info("Ubicacion actual del documento: " + ubicacionActual);
+                                    
+                                    if (ubicacion != null && !ubicacion.equals(ubicacionActual)) {
+                                        LOGGER.info("Actualizando ubicacion del documento de " + ubicacionActual + " a " + ubicacion);
+                                        documentoLegal.setFechaMovimiento(new Date());
+                                        documentoLegal.setUbicacionDocumento(parametroRepository.obtenerPorTipoValor(Constantes.PARAMETRO_SEGUIMIENTO, ubicacion));
 
-                            String ubicacion = elaborarDocumentoDao.ubicacionUsuarioBean(destinatarios.get(0).getUsuario());
-
-                            if (ubicacion != null && documentoLegal.getUbicacionDocumento().getValor() != ubicacion) {
-                                documentoLegal.setFechaMovimiento(new Date());
-                                documentoLegal.setUbicacionDocumento(parametroRepository.obtenerPorTipoValor(Constantes.PARAMETRO_SEGUIMIENTO, ubicacion));
-
-                                hcDocumentoLegalRepository.save(documentoLegal);
+                                        hcDocumentoLegalRepository.save(documentoLegal);
+                                        LOGGER.info("Ubicacion actualizada exitosamente");
+                                    } else {
+                                        LOGGER.info("No se requiere actualizar la ubicacion");
+                                    }
+                                } else {
+                                    LOGGER.warn("UbicacionDocumento es null, no se puede comparar");
+                                }
+                            } catch (Exception e) {
+                                LOGGER.error("Error al actualizar ubicacion del documento: " + e.getMessage(), e);
+                                // No lanzar excepción para que continue el flujo
                             }
                         }
                     }

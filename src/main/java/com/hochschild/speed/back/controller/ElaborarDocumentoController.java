@@ -97,9 +97,11 @@ public class ElaborarDocumentoController {
                 Map<String, Object> response = elaborarDocumentoService.guardarBorrador(documento, guardarBorradorBean.getArchivo(), guardarBorradorBean.getIdDestinatarios(), usuario, guardarBorradorBean.getEnviadoC());
                 return new ResponseEntity<>(response, HttpStatus.OK);
             }catch (Exception e){
+                LOGGER.error("Error en guardarBorrador: " + e.getMessage(), e);
                 Map<String, Object> result = new HashMap<>();
-                result.put("resultado", "error" + e.getMessage());
+                result.put("resultado", "error" + (e.getMessage() != null ? e.getMessage() : ""));
                 result.put("mensaje", "Ocurrio un error al adjuntar el borrador");
+                result.put("detalle", e.getClass().getSimpleName() + ": " + e.getMessage());
                 return new ResponseEntity<>(result, HttpStatus.INTERNAL_SERVER_ERROR);
             }
         }

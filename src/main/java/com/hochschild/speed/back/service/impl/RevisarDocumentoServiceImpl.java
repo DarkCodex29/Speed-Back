@@ -100,10 +100,41 @@ private final BotonDAO botonDAO;
         }
         RevisarDocumentoBean revisarDocumentoBean = new RevisarDocumentoBean();
         revisarDocumentoBean.setCampos(campos);
+        // Verificar si debe mostrar solo el último archivo
+        boolean mostrarSoloUltimoArchivo = false;
+        
+        // Caso 1: Estado ENVIADO_VISADO para contratos, adendas y borradores
         if (documento.getExpediente().getDocumentoLegal().getEstado().equals(Constantes.ESTADO_HC_ENVIADO_VISADO) &&
                 (documento.getTipoDocumento().getId().equals(Integer.valueOf(Constantes.ID_TIPO_DOCUMENTO_CONTRATO)) ||
                         documento.getTipoDocumento().getId().equals(Integer.valueOf(Constantes.ID_TIPO_DOCUMENTO_ADENDA)) ||
                         documento.getTipoDocumento().getId().equals(Integer.valueOf(Constantes.ID_TIPO_DOCUMENTO_BORRADORES)))) {
+            mostrarSoloUltimoArchivo = true;
+        }
+        
+        // Caso 2: Para documentos tipo BORRADORES, aplicar filtro por roles
+        if (documento.getTipoDocumento().getId().equals(Integer.valueOf(Constantes.ID_TIPO_DOCUMENTO_BORRADORES))) {
+            // Verificar roles del usuario
+            List<Rol> roles = rolRepository.buscarActivosPorUsuario(usuario.getId());
+            boolean tieneRolPrivilegiado = false;
+            
+            if (roles != null && !roles.isEmpty()) {
+                for (Rol rol : roles) {
+                    if (rol.getCodigo() != null && 
+                        (rol.getCodigo().contains(Constantes.CODIGO_ROL_ABOGADO) ||
+                         rol.getCodigo().equals(Constantes.ROL_ADMINISTRADOR_CODIGO))) {
+                        tieneRolPrivilegiado = true;
+                        break;
+                    }
+                }
+            }
+            
+            // Si NO tiene rol privilegiado, mostrar solo último archivo
+            if (!tieneRolPrivilegiado) {
+                mostrarSoloUltimoArchivo = true;
+            }
+        }
+        
+        if (mostrarSoloUltimoArchivo && !archivos.isEmpty()) {
             List<Archivo> archivoReciente = new ArrayList<>();
             archivoReciente.add(archivos.get(0));
             for(Archivo archivo : archivoReciente){
@@ -111,7 +142,6 @@ private final BotonDAO botonDAO;
                 for(Version version : archivo.getVersions()){
                     version.setArchivo(null);
                 }
-
             }
             revisarDocumentoBean.setLstArchivos(archivoReciente);
         } else {

@@ -183,6 +183,8 @@ private final BotonDAO botonDAO;
                         ltsBotones.add(b);
                     }
                 }
+                // Aplicar validación para botón "Generar Plantilla" 
+                ltsBotones = aplicarValidacionGenerarPlantilla(ltsBotones, usuario);
                 revisarDocumentoBean.setLtsBotonesDoc(ltsBotones);
                // revisarDocumentoBean.setLtsBotonesDoc(ltsBotonesDoc);
 
@@ -241,6 +243,8 @@ private final BotonDAO botonDAO;
                     ltsBotonesDoc = obtenerBotonesDocumentoLegalExceptoParametro(perfilSesion, documento.getExpediente().getDocumentoLegal().getEstado(), responsable, Constantes.PARAMETRO_CONTRATO);
                 }
 
+                // Aplicar validación para botón "Generar Plantilla"
+                ltsBotonesDoc = aplicarValidacionGenerarPlantilla(ltsBotonesDoc, usuario);
                 revisarDocumentoBean.setLtsBotonesDoc(ltsBotonesDoc);
             } else {
                 if (traza.getEstado() != null && traza.getEstado().equals(Constantes.ESTADO_PAUSADO)) {
@@ -264,6 +268,8 @@ private final BotonDAO botonDAO;
                         ltsBotones.add(b);
                     }
                 }
+                // Aplicar validación para botón "Generar Plantilla"
+                ltsBotones = aplicarValidacionGenerarPlantilla(ltsBotones, usuario);
                 revisarDocumentoBean.setLtsBotonesDoc(ltsBotones);
             }
 
@@ -334,5 +340,49 @@ private final BotonDAO botonDAO;
         }
 
         return archivos;
+    }
+
+    /**
+     * Aplica validación para botón "Generar Plantilla" - Solo para Abogado, Abogado Responsable y Administrador
+     */
+    private List<Boton> aplicarValidacionGenerarPlantilla(List<Boton> botones, Usuario usuario) {
+        if (botones == null || botones.isEmpty()) {
+            return botones;
+        }
+
+        // Verificar si el usuario tiene los roles permitidos
+        List<Rol> roles = rolRepository.buscarActivosPorUsuario(usuario.getId());
+        boolean puedeGenerarPlantilla = false;
+        
+        if (roles != null && !roles.isEmpty()) {
+            for (Rol rol : roles) {
+                if (rol.getCodigo() != null && 
+                    (Constantes.CODIGO_ROL_ABOGADO.equals(rol.getCodigo()) ||
+                     Constantes.CODIGO_ROL_ABOGADO_RESPONSABLE.equals(rol.getCodigo()) || 
+                     Constantes.ROL_ADMINISTRADOR_CODIGO.equals(rol.getCodigo()))) {
+                    puedeGenerarPlantilla = true;
+                    break;
+                }
+            }
+        }
+        
+        // Si no puede generar plantilla, filtrar los botones correspondientes
+        if (!puedeGenerarPlantilla) {
+            botones.removeIf(boton -> {
+                String url = boton.getUrl();
+                String parametroBoton = boton.getParametro();
+                String nombreBoton = boton.getNombre();
+                
+                // Filtrar botones de "Generar Plantilla"
+                return (url != null && url.toLowerCase().contains("generar") && 
+                        (url.toLowerCase().contains("plantilla") || url.toLowerCase().contains("contrato") || url.toLowerCase().contains("adenda"))) ||
+                       (parametroBoton != null && parametroBoton.toLowerCase().contains("generar") && 
+                        (parametroBoton.toLowerCase().contains("plantilla") || parametroBoton.toLowerCase().contains("contrato") || parametroBoton.toLowerCase().contains("adenda"))) ||
+                       (nombreBoton != null && nombreBoton.toLowerCase().contains("generar") && 
+                        (nombreBoton.toLowerCase().contains("plantilla") || nombreBoton.toLowerCase().contains("contrato") || nombreBoton.toLowerCase().contains("adenda")));
+            });
+        }
+        
+        return botones;
     }
 }

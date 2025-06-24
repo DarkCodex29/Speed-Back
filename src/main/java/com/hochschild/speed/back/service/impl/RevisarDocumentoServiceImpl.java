@@ -119,9 +119,9 @@ private final BotonDAO botonDAO;
             
             if (roles != null && !roles.isEmpty()) {
                 for (Rol rol : roles) {
-                    if (rol.getCodigo() != null && 
-                        (rol.getCodigo().contains(Constantes.CODIGO_ROL_ABOGADO) ||
-                         rol.getCodigo().equals(Constantes.ROL_ADMINISTRADOR_CODIGO))) {
+                    if (rol.getCodigoSCA() != null && 
+                        (rol.getCodigoSCA().equals("ZSLG:RESP_LEGAL:HOC") ||
+                         rol.getCodigoSCA().equals("ZSLG:ADMINISTRADORSISTEMA:"))) {
                         tieneRolPrivilegiado = true;
                         break;
                     }
@@ -386,10 +386,9 @@ private final BotonDAO botonDAO;
         
         if (roles != null && !roles.isEmpty()) {
             for (Rol rol : roles) {
-                if (rol.getCodigo() != null && 
-                    (Constantes.CODIGO_ROL_ABOGADO.equals(rol.getCodigo()) ||
-                     Constantes.CODIGO_ROL_ABOGADO_RESPONSABLE.equals(rol.getCodigo()) || 
-                     Constantes.ROL_ADMINISTRADOR_CODIGO.equals(rol.getCodigo()))) {
+                if (rol.getCodigoSCA() != null && 
+                    (rol.getCodigoSCA().equals("ZSLG:RESP_LEGAL:HOC") ||
+                     rol.getCodigoSCA().equals("ZSLG:ADMINISTRADORSISTEMA:"))) {
                     puedeGenerarPlantilla = true;
                     break;
                 }

@@ -123,12 +123,12 @@ public class OpcionSeguridadDaoImpl implements OpcionSeguridadDao {
         @SuppressWarnings("unchecked")
         List<String[]> result = storedProcedureQuery.getResultList();
 
-        if(result!=null && !result.isEmpty()){
-            for(Object[] fila : result){
-                if(StringUtils.countMatches(fila[1].toString(), ",")==3){
+        if (result != null && !result.isEmpty()) {
+            for (Object[] fila : result) {
+                if (StringUtils.countMatches(fila[1].toString(), ",") == 3) {
                     listaVO.add(fila[1].toString());
-                }else{
-                    if(StringUtils.countMatches(fila[0].toString(), ",")==3){
+                } else {
+                    if (StringUtils.countMatches(fila[0].toString(), ",") == 3) {
                         listaVO.add(fila[0].toString());
                     }
                 }

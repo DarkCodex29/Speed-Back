@@ -359,5 +359,38 @@
 		"estructura": "JSON limpio y simple - cada proceso > rol > estado > lista de botones",
 		"alineacion": "100% basado en las 6 tablas visuales proporcionadas",
 		"mantenimiento": "Fácil de leer, modificar y mantener"
+	},
+
+	"logica_especial": {
+		"descripcion": "Casos especiales implementados en código Java que modifican el comportamiento de la matriz",
+		"administradores_en_vencido": {
+			"problema": "Los usuarios con rol 'administrador' + 'visador' en estado VENCIDO deben ver los mismos botones que un 'solicitante', no los de 'abogado_responsable'",
+			"solucion_implementada": "En RevisarExpedienteServiceImpl.java se detecta cuando un usuario 'administrador' llega a ABOGADO_RESPONSABLE_VENCIDO y se le redirige dinámicamente a SOLICITANTE_VENCIDO",
+			"codigo_java": "if (ABOGADO_RESPONSABLE_VENCIDO && tieneRolAdministrador) { claveMatriz = SOLICITANTE_VENCIDO; }",
+			"usuarios_afectados": {
+				"MILAGROS_OVIEDO": "administrador + visador → Ve botones de SOLICITANTE_VENCIDO (3 botones)",
+				"MARCIAL_DIAZ": "abogadoResponsable → Ve botones de ABOGADO_RESPONSABLE_VENCIDO (6 botones)",
+				"MARIVEL_ALVAREZ": "solicitante → Ve botones de SOLICITANTE_VENCIDO (3 botones)"
+			},
+			"botones_resultantes": {
+				"SOLICITANTE_VENCIDO": [
+					"VER_HISTORIA",
+					"CONFIGURACION_ALARMAS",
+					"DATOS_CONTRATO (en contrato) / DATOS_ADENDA (en adenda)"
+				],
+				"ABOGADO_RESPONSABLE_VENCIDO": [
+					"VER_HISTORIA",
+					"SEGURIDAD",
+					"CONFIGURACION_ALARMAS",
+					"DATOS_CONTRATO/DATOS_ADENDA",
+					"VER_CONTRATO",
+					"NOTIFICAR_FIRMADO",
+					"REABRIR"
+				]
+			},
+			"ubicacion_codigo": "speed-back-feature-merge-project/src/main/java/com/hochschild/speed/back/service/impl/RevisarExpedienteServiceImpl.java",
+			"metodo": "obtenerBotonesSegunMatriz() - líneas ~547-560",
+			"fecha_implementacion": "2025-01-03"
+		}
 	}
 }

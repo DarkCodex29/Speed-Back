@@ -411,7 +411,7 @@ public class RevisarExpedienteServiceImpl implements RevisarExpedienteService {
 
         // Obtener botones según matriz
         List<Boton> botonesPermitidos = obtenerBotonesSegunMatriz(perfil, expediente, estadoDocumentoLegal, rolUsuario,
-                tipoProceso);
+                tipoProceso, usuario);
 
         LOGGER.info("Botones obtenidos: " + botonesPermitidos.size());
         for (Boton boton : botonesPermitidos) {
@@ -433,41 +433,66 @@ public class RevisarExpedienteServiceImpl implements RevisarExpedienteService {
             LOGGER.info("- Rol encontrado: " + rol.getCodigo());
         }
 
-        // Verificar si es Visador (rol específico de visado)
-        // Constantes.CODIGO_ROL_VISADOR = "visador"
+        // === LÓGICA CONTEXTUAL POR ESTADO (SEGÚN CLIENTE) ===
+        // "Cuando la solicitud es diferente al estado enviado a visado hay que escoger
+        // el rol administrador"
+        // "Cuando es enviado a visado escoger un rol de visador"
+
+        Character estadoDL = expediente.getDocumentoLegal() != null ? expediente.getDocumentoLegal().getEstado() : null;
+        boolean esEnviadoVisado = (estadoDL != null && estadoDL.equals(Constantes.ESTADO_HC_ENVIADO_VISADO));
+
+        LOGGER.info("Estado documento: " + estadoDL + ", Es ENVIADO_VISADO: " + esEnviadoVisado);
+
+        if (esEnviadoVisado) {
+            // ESTADO = ENVIADO_VISADO → Priorizar VISADOR si existe
+            if (roles.stream().anyMatch(rol -> Constantes.CODIGO_ROL_VISADOR.equals(rol.getCodigo()))) {
+                LOGGER.info("Usuario identificado como VISADOR (estado ENVIADO_VISADO)");
+                return "VISADOR";
+            }
+        } else {
+            // ESTADO ≠ ENVIADO_VISADO → Priorizar ADMINISTRADOR/ABOGADO_RESPONSABLE si
+            // existe
+
+            // Verificar si es Administrador (por código)
+            if (roles.stream().anyMatch(rol -> "administrador".equals(rol.getCodigo()))) {
+                LOGGER.info("Usuario identificado como ABOGADO_RESPONSABLE (rol administrador, estado no-visado)");
+                return "ABOGADO_RESPONSABLE";
+            }
+
+            // Verificar si es Abogado Responsable
+            if (roles.stream().anyMatch(rol -> Constantes.CODIGO_ROL_ABOGADO_RESPONSABLE.equals(rol.getCodigo()))) {
+                LOGGER.info("Usuario identificado como ABOGADO_RESPONSABLE (rol abogadoResponsable)");
+                return "ABOGADO_RESPONSABLE";
+            }
+
+            // Verificar si es Abogado (incluye administrador sistema)
+            if (roles.stream().anyMatch(rol -> Constantes.CODIGO_ROL_ABOGADO.equals(rol.getCodigo()))) {
+                LOGGER.info("Usuario identificado como ABOGADO (mapeado a ABOGADO_RESPONSABLE)");
+                return "ABOGADO_RESPONSABLE";
+            }
+
+            // Verificar por nombre del rol (fallback para roles como "Abogado Responsable")
+            if (roles.stream().anyMatch(rol -> rol.getNombre() != null &&
+                    (rol.getNombre().toLowerCase().contains("abogado responsable") ||
+                            rol.getNombre().toLowerCase().contains("administrador") ||
+                            rol.getCodigo().contains("RESP_LEGAL")))) {
+                LOGGER.info("Usuario identificado como ABOGADO_RESPONSABLE por nombre/código de rol");
+                return "ABOGADO_RESPONSABLE";
+            }
+        }
+
+        // === LÓGICA FALLBACK (SI NO APLICA LA CONTEXTUAL) ===
+
+        // Verificar si es Visador (caso fallback)
         if (roles.stream().anyMatch(rol -> Constantes.CODIGO_ROL_VISADOR.equals(rol.getCodigo()))) {
-            LOGGER.info("Usuario identificado como VISADOR");
+            LOGGER.info("Usuario identificado como VISADOR (fallback)");
             return "VISADOR";
         }
 
-        // Verificar si es Abogado Responsable
-        // Constantes.CODIGO_ROL_ABOGADO_RESPONSABLE = "abogadoResponsable"
-        if (roles.stream().anyMatch(rol -> Constantes.CODIGO_ROL_ABOGADO_RESPONSABLE.equals(rol.getCodigo()))) {
-            LOGGER.info("Usuario identificado como ABOGADO_RESPONSABLE");
-            return "ABOGADO_RESPONSABLE";
-        }
-
-        // Verificar si es Abogado (incluye administrador sistema)
-        // Constantes.CODIGO_ROL_ABOGADO = "abogado"
-        if (roles.stream().anyMatch(rol -> Constantes.CODIGO_ROL_ABOGADO.equals(rol.getCodigo()))) {
-            LOGGER.info("Usuario identificado como ABOGADO (mapeado a ABOGADO_RESPONSABLE)");
-            return "ABOGADO_RESPONSABLE"; // Se mapea a la misma matriz
-        }
-
         // Verificar si es Solicitante
-        // Constantes.CODIGO_ROL_SOLICITANTE = "solicitante"
         if (roles.stream().anyMatch(rol -> Constantes.CODIGO_ROL_SOLICITANTE.equals(rol.getCodigo()))) {
             LOGGER.info("Usuario identificado como SOLICITANTE");
             return "SOLICITANTE";
-        }
-
-        // Verificar por nombre del rol (fallback para roles como "Abogado Responsable")
-        if (roles.stream().anyMatch(rol -> rol.getNombre() != null &&
-                (rol.getNombre().toLowerCase().contains("abogado responsable") ||
-                        rol.getNombre().toLowerCase().contains("administrador") ||
-                        rol.getCodigo().contains("RESP_LEGAL")))) {
-            LOGGER.info("Usuario identificado como ABOGADO_RESPONSABLE por nombre/código de rol");
-            return "ABOGADO_RESPONSABLE";
         }
 
         // Si es el responsable del documento, se considera Abogado Responsable
@@ -511,7 +536,7 @@ public class RevisarExpedienteServiceImpl implements RevisarExpedienteService {
      * Obtiene los botones según la matriz Estados vs Roles vs Tipo Proceso
      */
     private List<Boton> obtenerBotonesSegunMatriz(Perfil perfil, Expediente expediente, Character estadoDocumentoLegal,
-            String rolUsuario, String tipoProceso) {
+            String rolUsuario, String tipoProceso, Usuario usuario) {
         // Cargar matriz de permisos alineada con las tablas visuales del cliente
         Map<String, Set<String>> matrizPermisos = inicializarMatrizAlineada(tipoProceso);
 
@@ -520,6 +545,21 @@ public class RevisarExpedienteServiceImpl implements RevisarExpedienteService {
         String claveMatriz = rolUsuario + "_" + codigoEstado;
 
         LOGGER.info("Clave matriz: " + claveMatriz);
+
+        // === LÓGICA ESPECIAL PARA ADMINISTRADORES EN VENCIDO ===
+        // Si es administrador actuando como ABOGADO_RESPONSABLE en VENCIDO,
+        // usar los mismos botones que SOLICITANTE_VENCIDO
+        if ("ABOGADO_RESPONSABLE_VENCIDO".equals(claveMatriz)) {
+            List<Rol> roles = rolRepository.buscarActivosPorUsuario(usuario.getId());
+            boolean tieneRolAdministrador = roles.stream()
+                    .anyMatch(rol -> Constantes.CODIGO_ROL_ABOGADO.equals(rol.getCodigo()));
+            boolean esEstadoVencido = "VENCIDO".equals(codigoEstado);
+
+            if (tieneRolAdministrador && esEstadoVencido) {
+                claveMatriz = "SOLICITANTE_VENCIDO";
+                LOGGER.info("🔄 CASO ESPECIAL: Administrador en VENCIDO → Usando matriz SOLICITANTE_VENCIDO");
+            }
+        }
 
         // Obtener botones permitidos para esta combinación
         Set<String> botonesPermitidos = matrizPermisos.get(claveMatriz);

@@ -23,7 +23,6 @@ import java.nio.file.Files;
 import java.util.Date;
 import java.util.Map;
 
-
 /**
  * @author CAPSULA DIGITAL
  * @since 24/07/2023
@@ -41,14 +40,13 @@ public class DescargarArchivoController {
     private final ElaborarDocumentoDao elaborarDocumentoDao;
     private final ParametroRepository parametroRepository;
 
-
     public DescargarArchivoController(AlfrescoConfig alfrescoConfig, JwtTokenUtil jwtTokenUtil,
-                                      RevisarDocumentoService revisarDocumentoService,
-                                      AlfrescoService alfrescoService,
-                                      UsuarioRepository usuarioRepository,
-                                      HcDocumentoLegalRepository hcDocumentoLegalRepository,
-                                      ElaborarDocumentoDao elaborarDocumentoDao,
-                                      ParametroRepository parametroRepository) {
+            RevisarDocumentoService revisarDocumentoService,
+            AlfrescoService alfrescoService,
+            UsuarioRepository usuarioRepository,
+            HcDocumentoLegalRepository hcDocumentoLegalRepository,
+            ElaborarDocumentoDao elaborarDocumentoDao,
+            ParametroRepository parametroRepository) {
         this.alfrescoConfig = alfrescoConfig;
         this.jwtTokenUtil = jwtTokenUtil;
         this.revisarDocumentoService = revisarDocumentoService;
@@ -61,15 +59,17 @@ public class DescargarArchivoController {
 
     @ResponseBody
     @RequestMapping(value = "/{idExpediente}/{idArchivo}", method = RequestMethod.GET)
-    public void descargar(@PathVariable("idArchivo") Integer idArchivo, @PathVariable("idExpediente") Integer idExpediente, HttpServletRequest request, final HttpServletResponse httpServletResponse) {
+    public void descargar(@PathVariable("idArchivo") Integer idArchivo,
+            @PathVariable("idExpediente") Integer idExpediente, HttpServletRequest request,
+            final HttpServletResponse httpServletResponse) {
         descargar(idArchivo, idExpediente, null, request, httpServletResponse);
     }
 
-
     @ResponseBody
     @RequestMapping(value = "/{idArchivo}/{idExpediente}/{version}", method = RequestMethod.GET)
-    public void descargar(@PathVariable("idArchivo") Integer idArchivo, @PathVariable("idExpediente") Integer idExpediente, @PathVariable("version") String version, HttpServletRequest request, final HttpServletResponse httpServletResponse) {
-
+    public void descargar(@PathVariable("idArchivo") Integer idArchivo,
+            @PathVariable("idExpediente") Integer idExpediente, @PathVariable("version") String version,
+            HttpServletRequest request, final HttpServletResponse httpServletResponse) {
 
         if (idExpediente != null) {
             String token = request.getHeader("Authorization").substring(7);
@@ -82,84 +82,9 @@ public class DescargarArchivoController {
             if (hcDocumentoLegal != null && hcDocumentoLegal.getId() != null) {
 
                 hcDocumentoLegal.setFechaMovimiento(new Date());
-                hcDocumentoLegal.setUbicacionDocumento(parametroRepository.obtenerPorTipoValor(Constantes.PARAMETRO_SEGUIMIENTO, elaborarDocumentoDao.ubicacionUsuarioBean(usuario.getUsuario())));
-
-                hcDocumentoLegalRepository.save(hcDocumentoLegal);
-            }
-        }
-
-        Archivo archivo = revisarDocumentoService.obtenerArchivo(idArchivo);
-
-        if (archivo != null) {
-            String contentType = null;
-            InputStream in = null;
-            if (alfrescoConfig.getHabilitado()) {
-                Map<String, Object> file = alfrescoService.obtenerArchivo(archivo, version);
-                if (file != null) {
-                    contentType = (String) file.get("mime");
-                    in = (InputStream) file.get("stream");
-                }
-            } else if (!AppUtil.checkNullOrEmpty(archivo.getRutaLocal())) {
-                File file = new File(archivo.getRutaLocal());
-                try {
-                    contentType = Files.probeContentType(file.toPath());
-                    in = new FileInputStream(file);
-                } catch (IOException e) {
-                    LOGGER.info("Error leyendo archivo local", e);
-                }
-            }
-            if (contentType != null && in != null) {
-                httpServletResponse.setHeader("Content-Disposition", "filename=\"" + archivo.getNombre() + "\"");
-                LOGGER.info("Content-Type: [" + contentType + "]");
-                httpServletResponse.setContentType(contentType);
-                OutputStream out;
-                try {
-                    out = httpServletResponse.getOutputStream();
-                    int read = 0;
-                    byte[] bytes = new byte[1024];
-
-                    while ((read = in.read(bytes)) != -1) {
-                        out.write(bytes, 0, read);
-                    }
-
-                    in.close();
-                    out.flush();
-                    out.close();
-                } catch (IOException e) {
-                    LOGGER.info("No se pudo descargar el archivo", e);
-                    try {
-                        httpServletResponse.sendError(HttpServletResponse.SC_NOT_FOUND);
-                    } catch (IOException ioe) {
-                        LOGGER.info("Error enviando respuesta", ioe);
-                    }
-                }
-            } else {
-                try {
-                    httpServletResponse.sendError(HttpServletResponse.SC_NOT_FOUND);
-                } catch (IOException e) {
-                    LOGGER.info("Error enviando respuesta", e);
-                }
-            }
-        }
-    }
-    
-    @ResponseBody
-    @RequestMapping(value = "/usuario/{idExpediente}/{idArchivo}/{idUsuario}", method = RequestMethod.GET)
-    public void descargarArchivoUsuario(@PathVariable("idArchivo") Integer idArchivo, 
-    		@PathVariable("idExpediente") Integer idExpediente, 
-    		@PathVariable("idUsuario") String idUsuario, 
-    		HttpServletRequest request, final HttpServletResponse httpServletResponse) {
-
-
-        if (idExpediente != null) {
-            Usuario usuario = usuarioRepository.obtenerPorUsuario(idUsuario);
-
-            HcDocumentoLegal hcDocumentoLegal = hcDocumentoLegalRepository.findByIdExpediente(idExpediente);
-
-            if (hcDocumentoLegal != null && hcDocumentoLegal.getId() != null) {
-
-                hcDocumentoLegal.setFechaMovimiento(new Date());
-                hcDocumentoLegal.setUbicacionDocumento(parametroRepository.obtenerPorTipoValor(Constantes.PARAMETRO_SEGUIMIENTO, elaborarDocumentoDao.ubicacionUsuarioBean(usuario.getUsuario())));
+                hcDocumentoLegal
+                        .setUbicacionDocumento(parametroRepository.obtenerPorTipoValor(Constantes.PARAMETRO_SEGUIMIENTO,
+                                elaborarDocumentoDao.ubicacionUsuarioBean(usuario.getUsuario())));
 
                 hcDocumentoLegalRepository.save(hcDocumentoLegal);
             }
@@ -216,6 +141,114 @@ public class DescargarArchivoController {
                 } catch (IOException e) {
                     LOGGER.info("Error enviando respuesta", e);
                 }
+            }
+        }
+    }
+
+    @ResponseBody
+    @RequestMapping(value = "/usuario/{idExpediente}/{idArchivo}", method = RequestMethod.GET)
+    public void descargarArchivoUsuario(@PathVariable("idArchivo") Integer idArchivo,
+            @PathVariable("idExpediente") Integer idExpediente,
+            HttpServletRequest request, final HttpServletResponse httpServletResponse) {
+
+        try {
+            LOGGER.info("Iniciando descarga de archivo. IdExpediente: " + idExpediente + ", IdArchivo: " + idArchivo);
+
+            if (idExpediente != null) {
+                String authHeader = request.getHeader("Authorization");
+                if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                    LOGGER.error("Token de autorización no encontrado o inválido");
+                    httpServletResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+                    return;
+                }
+
+                String token = authHeader.substring(7);
+                Integer idUsuarioToken = (Integer) jwtTokenUtil.getClaimFromToken(token, "idUsuario");
+                LOGGER.info("Usuario obtenido del token: " + idUsuarioToken);
+
+                Usuario usuario = usuarioRepository.findById(idUsuarioToken);
+
+                HcDocumentoLegal hcDocumentoLegal = hcDocumentoLegalRepository.findByIdExpediente(idExpediente);
+
+                if (hcDocumentoLegal != null && hcDocumentoLegal.getId() != null) {
+                    hcDocumentoLegal.setFechaMovimiento(new Date());
+                    hcDocumentoLegal
+                            .setUbicacionDocumento(
+                                    parametroRepository.obtenerPorTipoValor(Constantes.PARAMETRO_SEGUIMIENTO,
+                                            elaborarDocumentoDao.ubicacionUsuarioBean(usuario.getUsuario())));
+
+                    hcDocumentoLegalRepository.save(hcDocumentoLegal);
+                }
+            }
+
+            Archivo archivo = revisarDocumentoService.obtenerArchivo(idArchivo);
+            LOGGER.info("Archivo obtenido: " + (archivo != null ? archivo.getNombre() : "null"));
+
+            if (archivo != null) {
+                String contentType = null;
+                InputStream in = null;
+                if (alfrescoConfig.getHabilitado()) {
+                    Map<String, Object> file = alfrescoService.obtenerArchivo(archivo, null);
+                    if (file != null) {
+                        contentType = (String) file.get("mime");
+                        in = (InputStream) file.get("stream");
+                    }
+                } else if (!AppUtil.checkNullOrEmpty(archivo.getRutaLocal())) {
+                    File file = new File(archivo.getRutaLocal());
+                    try {
+                        contentType = Files.probeContentType(file.toPath());
+                        in = new FileInputStream(file);
+                    } catch (IOException e) {
+                        LOGGER.info("Error leyendo archivo local", e);
+                    }
+                }
+                if (contentType != null && in != null) {
+                    httpServletResponse.setHeader("Content-Disposition", "filename=\"" + archivo.getNombre() + "\"");
+                    LOGGER.info("Content-Type: [" + contentType + "]");
+                    httpServletResponse.setContentType(contentType);
+                    OutputStream out;
+                    try {
+                        out = httpServletResponse.getOutputStream();
+                        int read = 0;
+                        byte[] bytes = new byte[1024];
+
+                        while ((read = in.read(bytes)) != -1) {
+                            out.write(bytes, 0, read);
+                        }
+
+                        in.close();
+                        out.flush();
+                        out.close();
+                    } catch (IOException e) {
+                        LOGGER.info("No se pudo descargar el archivo", e);
+                        try {
+                            httpServletResponse.sendError(HttpServletResponse.SC_NOT_FOUND);
+                        } catch (IOException ioe) {
+                            LOGGER.info("Error enviando respuesta", ioe);
+                        }
+                    }
+                } else {
+                    LOGGER.error("ContentType o InputStream es null");
+                    try {
+                        httpServletResponse.sendError(HttpServletResponse.SC_NOT_FOUND);
+                    } catch (IOException e) {
+                        LOGGER.info("Error enviando respuesta", e);
+                    }
+                }
+            } else {
+                LOGGER.error("Archivo no encontrado con ID: " + idArchivo);
+                try {
+                    httpServletResponse.sendError(HttpServletResponse.SC_NOT_FOUND);
+                } catch (IOException e) {
+                    LOGGER.error("Error enviando respuesta de archivo no encontrado", e);
+                }
+            }
+        } catch (Exception e) {
+            LOGGER.error("Error inesperado en descarga de archivo", e);
+            try {
+                httpServletResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            } catch (IOException ioe) {
+                LOGGER.error("Error enviando respuesta de error interno", ioe);
             }
         }
     }

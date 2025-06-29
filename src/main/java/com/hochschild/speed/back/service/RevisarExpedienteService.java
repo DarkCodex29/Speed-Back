@@ -45,4 +45,10 @@ public interface RevisarExpedienteService {
     List<Proceso> listarProcesos();
     List<Usuario> devolverUsuariosResponsablesPorProceso(Integer idProceso);
     Boolean devolverFlagCliente(Integer idProceso);
+
+    /**
+     * Nuevo método que implementa la matriz Estados vs Botones vs Roles
+     * según las especificaciones del cliente
+     */
+    List<Boton> obtenerBotonesMatrizEstadosRoles(Expediente expediente, Usuario usuario, Perfil perfil, Character estadoDocumentoLegal);
 }

@@ -1,0 +1,363 @@
+{
+	"descripcion": "Matriz de visibilidad de botones - 100% alineada con tablas visuales del cliente",
+	"version": "3.0 - Basada en análisis completo de 6 tablas",
+	"fecha_creacion": "2024-12-19",
+
+	"proceso_contrato": {
+		"id_proceso": 3,
+		"descripcion": "Proceso Contrato - ID 3",
+
+		"abogado_responsable": {
+			"SOLICITUD_ENVIADA": [
+				"ACEPTAR_SOLICITUD",
+				"OBSERVAR_SOLICITUD",
+				"DATOS_CONTRATO",
+				"ADJUNTAR_DOCUMENTO",
+				"VER_HISTORIA",
+				"ELIMINAR"
+			],
+			"EN_ELABORACION": [
+				"DATOS_CONTRATO",
+				"ADJUNTAR_DOCUMENTO",
+				"VER_HISTORIA",
+				"ELIMINAR",
+				"SEGURIDAD",
+				"CONFIGURACION_ALARMAS"
+			],
+			"DOC_ELABORADO": [
+				"DATOS_CONTRATO",
+				"ADJUNTAR_DOCUMENTO",
+				"VER_HISTORIA",
+				"ELIMINAR",
+				"SEGURIDAD",
+				"CONFIGURACION_ALARMAS",
+				"ENVIAR_VB"
+			],
+			"ENVIADO_VISADO": [
+				"DATOS_CONTRATO",
+				"VER_HISTORIA",
+				"ELIMINAR",
+				"SEGURIDAD",
+				"VER_VISADORES",
+				"CANCELAR_VISADO"
+			],
+			"VISADO": [
+				"DATOS_CONTRATO",
+				"ADJUNTAR_DOCUMENTO",
+				"VER_HISTORIA",
+				"ELIMINAR",
+				"SEGURIDAD",
+				"CONFIGURACION_ALARMAS",
+				"IMPRIMIR_VB",
+				"FIRMA_ELECTRONICA",
+				"ENVIAR_FIRMA"
+			],
+			"ENVIADO_FIRMA": [
+				"DATOS_CONTRATO",
+				"ADJUNTAR_DOCUMENTO",
+				"VER_HISTORIA",
+				"ELIMINAR",
+				"SEGURIDAD",
+				"CONFIGURACION_ALARMAS",
+				"IMPRIMIR_VB",
+				"ENTREGA_DOCUMENTO",
+				"REENVIAR_FIRMA_ELECTRONICA",
+				"NOTIFICAR_FIRMADO"
+			],
+			"COMUNICACION_INTERESADOS": [
+				"DATOS_CONTRATO",
+				"VER_HISTORIA",
+				"ELIMINAR",
+				"SEGURIDAD",
+				"CONFIGURACION_ALARMAS",
+				"COMUNICAR_INTERESADOS"
+			],
+			"VIGENTE": [
+				"DATOS_CONTRATO",
+				"VER_HISTORIA",
+				"SEGURIDAD",
+				"CONFIGURACION_ALARMAS",
+				"NOTIFICAR_FIRMADO",
+				"REABRIR"
+			],
+			"VENCIDO": [
+				"DATOS_CONTRATO",
+				"VER_HISTORIA",
+				"SEGURIDAD",
+				"CONFIGURACION_ALARMAS",
+				"NOTIFICAR_FIRMADO",
+				"REABRIR"
+			]
+		},
+
+		"solicitante": {
+			"SOLICITUD_ENVIADA": [
+				"DATOS_CONTRATO",
+				"ADJUNTAR_DOCUMENTO",
+				"VER_HISTORIA"
+			],
+			"EN_ELABORACION": [
+				"DATOS_CONTRATO",
+				"ADJUNTAR_DOCUMENTO",
+				"VER_HISTORIA",
+				"CONFIGURACION_ALARMAS"
+			],
+			"DOC_ELABORADO": [
+				"DATOS_CONTRATO",
+				"ADJUNTAR_DOCUMENTO",
+				"VER_HISTORIA",
+				"CONFIGURACION_ALARMAS"
+			],
+			"ENVIADO_VISADO": ["DATOS_CONTRATO", "VER_HISTORIA", "VER_VISADORES"],
+			"VISADO": [
+				"DATOS_CONTRATO",
+				"ADJUNTAR_DOCUMENTO",
+				"VER_HISTORIA",
+				"CONFIGURACION_ALARMAS",
+				"IMPRIMIR_VB"
+			],
+			"ENVIADO_FIRMA": [
+				"DATOS_CONTRATO",
+				"ADJUNTAR_DOCUMENTO",
+				"VER_HISTORIA",
+				"CONFIGURACION_ALARMAS",
+				"IMPRIMIR_VB",
+				"ENTREGA_DOCUMENTO"
+			],
+			"COMUNICACION_INTERESADOS": [
+				"DATOS_CONTRATO",
+				"VER_HISTORIA",
+				"CONFIGURACION_ALARMAS"
+			],
+			"VIGENTE": ["DATOS_CONTRATO", "VER_HISTORIA", "CONFIGURACION_ALARMAS"],
+			"VENCIDO": ["DATOS_CONTRATO", "VER_HISTORIA", "CONFIGURACION_ALARMAS"]
+		},
+
+		"visador": {
+			"SOLICITUD_ENVIADA": [],
+			"EN_ELABORACION": [],
+			"DOC_ELABORADO": [],
+			"ENVIADO_VISADO": [
+				"DATOS_CONTRATO",
+				"VER_HISTORIA",
+				"VER_VISADORES",
+				"APROBAR",
+				"OBSERVAR"
+			],
+			"VISADO": [],
+			"ENVIADO_FIRMA": [],
+			"COMUNICACION_INTERESADOS": [],
+			"VIGENTE": [],
+			"VENCIDO": []
+		}
+	},
+
+	"proceso_adenda": {
+		"id_proceso": [4, 5],
+		"descripcion": "Proceso Adenda - ID 4 y Adenda Automática - ID 5",
+
+		"abogado_responsable": {
+			"SOLICITUD_ENVIADA": [
+				"ACEPTAR_SOLICITUD",
+				"OBSERVAR_SOLICITUD",
+				"ADJUNTAR_DOCUMENTO",
+				"VER_HISTORIA",
+				"ELIMINAR",
+				"DATOS_ADENDA",
+				"VER_CONTRATO"
+			],
+			"EN_ELABORACION": [
+				"ADJUNTAR_DOCUMENTO",
+				"VER_HISTORIA",
+				"ELIMINAR",
+				"SEGURIDAD",
+				"CONFIGURACION_ALARMAS",
+				"DATOS_ADENDA",
+				"VER_CONTRATO"
+			],
+			"DOC_ELABORADO": [
+				"ADJUNTAR_DOCUMENTO",
+				"VER_HISTORIA",
+				"ELIMINAR",
+				"SEGURIDAD",
+				"CONFIGURACION_ALARMAS",
+				"ENVIAR_VB",
+				"DATOS_ADENDA",
+				"VER_CONTRATO"
+			],
+			"ENVIADO_VISADO": [
+				"VER_HISTORIA",
+				"ELIMINAR",
+				"SEGURIDAD",
+				"CONFIGURACION_ALARMAS",
+				"DATOS_ADENDA",
+				"VER_CONTRATO",
+				"VER_VISADORES",
+				"CANCELAR_VISADO"
+			],
+			"VISADO": [
+				"ADJUNTAR_DOCUMENTO",
+				"VER_HISTORIA",
+				"ELIMINAR",
+				"SEGURIDAD",
+				"CONFIGURACION_ALARMAS",
+				"DATOS_ADENDA",
+				"VER_CONTRATO",
+				"IMPRIMIR_VB",
+				"FIRMA_ELECTRONICA",
+				"ENVIAR_FIRMA"
+			],
+			"ENVIADO_FIRMA": [
+				"ADJUNTAR_DOCUMENTO",
+				"VER_HISTORIA",
+				"ELIMINAR",
+				"SEGURIDAD",
+				"CONFIGURACION_ALARMAS",
+				"DATOS_ADENDA",
+				"VER_CONTRATO",
+				"IMPRIMIR_VB",
+				"ENTREGA_DOCUMENTO",
+				"REENVIAR_FIRMA_ELECTRONICA",
+				"NOTIFICAR_FIRMADO"
+			],
+			"COMUNICACION_INTERESADOS": [
+				"VER_HISTORIA",
+				"ELIMINAR",
+				"SEGURIDAD",
+				"CONFIGURACION_ALARMAS",
+				"DATOS_ADENDA",
+				"VER_CONTRATO",
+				"COMUNICAR_INTERESADOS"
+			],
+			"VIGENTE": [
+				"VER_HISTORIA",
+				"SEGURIDAD",
+				"CONFIGURACION_ALARMAS",
+				"DATOS_ADENDA",
+				"VER_CONTRATO",
+				"NOTIFICAR_FIRMADO",
+				"REABRIR"
+			],
+			"VENCIDO": [
+				"VER_HISTORIA",
+				"SEGURIDAD",
+				"CONFIGURACION_ALARMAS",
+				"DATOS_ADENDA",
+				"VER_CONTRATO",
+				"NOTIFICAR_FIRMADO",
+				"REABRIR"
+			]
+		},
+
+		"solicitante": {
+			"SOLICITUD_ENVIADA": [
+				"ADJUNTAR_DOCUMENTO",
+				"VER_HISTORIA",
+				"DATOS_ADENDA",
+				"VER_CONTRATO"
+			],
+			"EN_ELABORACION": [
+				"ADJUNTAR_DOCUMENTO",
+				"VER_HISTORIA",
+				"CONFIGURACION_ALARMAS",
+				"DATOS_ADENDA",
+				"VER_CONTRATO"
+			],
+			"DOC_ELABORADO": [
+				"ADJUNTAR_DOCUMENTO",
+				"VER_HISTORIA",
+				"CONFIGURACION_ALARMAS",
+				"DATOS_ADENDA",
+				"VER_CONTRATO"
+			],
+			"ENVIADO_VISADO": [
+				"VER_HISTORIA",
+				"DATOS_ADENDA",
+				"VER_CONTRATO",
+				"VER_VISADORES"
+			],
+			"VISADO": [
+				"ADJUNTAR_DOCUMENTO",
+				"VER_HISTORIA",
+				"CONFIGURACION_ALARMAS",
+				"DATOS_ADENDA",
+				"VER_CONTRATO",
+				"IMPRIMIR_VB"
+			],
+			"ENVIADO_FIRMA": [
+				"ADJUNTAR_DOCUMENTO",
+				"VER_HISTORIA",
+				"CONFIGURACION_ALARMAS",
+				"DATOS_ADENDA",
+				"VER_CONTRATO",
+				"IMPRIMIR_VB",
+				"ENTREGA_DOCUMENTO"
+			],
+			"COMUNICACION_INTERESADOS": [
+				"VER_HISTORIA",
+				"CONFIGURACION_ALARMAS",
+				"DATOS_ADENDA",
+				"VER_CONTRATO"
+			],
+			"VIGENTE": [
+				"VER_HISTORIA",
+				"CONFIGURACION_ALARMAS",
+				"DATOS_ADENDA",
+				"VER_CONTRATO"
+			],
+			"VENCIDO": [
+				"VER_HISTORIA",
+				"CONFIGURACION_ALARMAS",
+				"DATOS_ADENDA",
+				"VER_CONTRATO"
+			]
+		},
+
+		"visador": {
+			"SOLICITUD_ENVIADA": [],
+			"EN_ELABORACION": [],
+			"DOC_ELABORADO": [],
+			"ENVIADO_VISADO": [
+				"VER_HISTORIA",
+				"DATOS_ADENDA",
+				"VER_CONTRATO",
+				"VER_VISADORES",
+				"APROBAR",
+				"OBSERVAR"
+			],
+			"VISADO": [],
+			"ENVIADO_FIRMA": [],
+			"COMUNICACION_INTERESADOS": [],
+			"VIGENTE": [],
+			"VENCIDO": []
+		}
+	},
+
+	"mapeo_estados": {
+		"descripcion": "Mapeo de caracteres de estado según Constantes.java",
+		"R": "SOLICITUD_ENVIADA",
+		"E": "EN_ELABORACION",
+		"D": "DOC_ELABORADO",
+		"V": "ENVIADO_VISADO",
+		"S": "VISADO",
+		"F": "ENVIADO_FIRMA",
+		"C": "COMUNICACION_INTERESADOS",
+		"T": "VIGENTE",
+		"O": "VENCIDO"
+	},
+
+	"mapeo_roles": {
+		"descripcion": "Mapeo de códigos de rol del sistema",
+		"abogadoResponsable": "abogado_responsable",
+		"RESP_LEGAL": "abogado_responsable",
+		"administrador": "abogado_responsable",
+		"solicitante": "solicitante",
+		"visador": "visador"
+	},
+
+	"notas": {
+		"estructura": "JSON limpio y simple - cada proceso > rol > estado > lista de botones",
+		"alineacion": "100% basado en las 6 tablas visuales proporcionadas",
+		"mantenimiento": "Fácil de leer, modificar y mantener"
+	}
+}

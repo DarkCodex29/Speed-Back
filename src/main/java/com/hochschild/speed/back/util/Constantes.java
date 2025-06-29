@@ -45,6 +45,9 @@ public class Constantes {
 
     public static final String GRID_EXPEDIENTE = "Expediente";
     public static final String GRID_EXPEDIENTE_COPIA = "ExpedienteCopia";
+    
+    // Grids específicos para matriz de Estados vs Roles
+
     public static final String GRID_DOCUMENTO = "Documento";
     public static final String GRID_NUEVO_DOCUMENTO = "NuevoDocumento";
     public static final String GRID_MENU = "Menu";

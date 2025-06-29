@@ -33,17 +33,17 @@ public class RevisarBuscarDocumentoServiceImpl implements RevisarBuscarDocumento
 
     @Autowired
     public RevisarBuscarDocumentoServiceImpl(RevisarExpedienteService revisarExpedienteService,
-                                             BotonRepository botonRepository,
-                                             TrazaRepository trazaRepository,
-                                             UsuarioRepository usuarioRepository,
-                                             RolRepository rolRepository,
-                                             ExpedienteRepository expedienteRepository,
-                                             HcDocumentoLegalRepository hcDocumentoLegalRepository,
-                                             HcAdendaRepository hcAdendaRepository,
-                                             ParametroRepository parametroRepository,
-                                             PerfilRepository perfilRepository,
-                                             UsuarioAccesoSolicitudRepository usuarioAccesoSolicitudRepository,
-                                             IntalioService intalioService) {
+            BotonRepository botonRepository,
+            TrazaRepository trazaRepository,
+            UsuarioRepository usuarioRepository,
+            RolRepository rolRepository,
+            ExpedienteRepository expedienteRepository,
+            HcDocumentoLegalRepository hcDocumentoLegalRepository,
+            HcAdendaRepository hcAdendaRepository,
+            ParametroRepository parametroRepository,
+            PerfilRepository perfilRepository,
+            UsuarioAccesoSolicitudRepository usuarioAccesoSolicitudRepository,
+            IntalioService intalioService) {
         this.revisarExpedienteService = revisarExpedienteService;
         this.botonRepository = botonRepository;
         this.trazaRepository = trazaRepository;
@@ -101,8 +101,10 @@ public class RevisarBuscarDocumentoServiceImpl implements RevisarBuscarDocumento
                     Proceso proceso = expediente.getProceso();
 
                     LOGGER.info("Proceso del expediente: [" + proceso.getLabel() + "]");
-                    if (proceso.getTipoProceso() != null && proceso.getTipoProceso().getAlerta().equals(Constantes.TIPO_PROCESO_ALERTA_PROCESO)) {
-                        detalleContratoBean.setFechaLimite(revisarExpedienteService.obtenerFechaLimite(expediente, proceso.getPlazo()));
+                    if (proceso.getTipoProceso() != null
+                            && proceso.getTipoProceso().getAlerta().equals(Constantes.TIPO_PROCESO_ALERTA_PROCESO)) {
+                        detalleContratoBean.setFechaLimite(
+                                revisarExpedienteService.obtenerFechaLimite(expediente, proceso.getPlazo()));
                     } else {
                         detalleContratoBean.setFechaLimite(traza.getFechaLimite());
                     }
@@ -113,7 +115,6 @@ public class RevisarBuscarDocumentoServiceImpl implements RevisarBuscarDocumento
                     Character estado = expediente.getEstado();
                     Integer tipoProcesoAqui = expediente.getProceso().getId();
                     LOGGER.info("Estado del expediente: [" + estado + "]");
-
 
                     /**
                      * Cuando se quiere ver el Expediente Registrado *
@@ -127,13 +128,17 @@ public class RevisarBuscarDocumentoServiceImpl implements RevisarBuscarDocumento
                     }
 
                     // Si el usuario es responsable en la traza
-                    UsuarioPorTraza ut = revisarExpedienteService.obtenerUsuarioPorTraza(traza.getId(), usuario.getId());
+                    UsuarioPorTraza ut = revisarExpedienteService.obtenerUsuarioPorTraza(traza.getId(),
+                            usuario.getId());
                     if (ut == null) {
-                        LOGGER.info("El usuario no posee la traza, verificamos si el usuario esta reemplazando a otro usuario");
-                        Reemplazo reemplazo = revisarExpedienteService.buscarReemplazo(usuario.getId(), expediente.getProceso());
+                        LOGGER.info(
+                                "El usuario no posee la traza, verificamos si el usuario esta reemplazando a otro usuario");
+                        Reemplazo reemplazo = revisarExpedienteService.buscarReemplazo(usuario.getId(),
+                                expediente.getProceso());
                         if (reemplazo != null) {
                             LOGGER.info("El usuario reemplaza al usuario que posee la traza!");
-                            ut = revisarExpedienteService.obtenerUsuarioPorTraza(traza.getId(), reemplazo.getReemplazado().getId());
+                            ut = revisarExpedienteService.obtenerUsuarioPorTraza(traza.getId(),
+                                    reemplazo.getReemplazado().getId());
                         }
                     }
                     if (ut != null && !trazaAntigua) {
@@ -151,29 +156,30 @@ public class RevisarBuscarDocumentoServiceImpl implements RevisarBuscarDocumento
 
                         List<Boton> botones;
                         if (expediente.getEstado().equals(Constantes.ESTADO_ARCHIVADO)) {
-                            botones = revisarExpedienteService.obtenerBotones(expediente, perfil, ut.isResponsable(), estado);
+                            botones = revisarExpedienteService.obtenerBotones(expediente, perfil, ut.isResponsable(),
+                                    estado);
                         } else if (expediente.getEstado().equals(Constantes.ESTADO_REGISTRADO)) {
                             if (multiple) {
                                 botones = revisarExpedienteService.obtenerBotones(expediente, perfil, ut.getEstado());
                             } else if (expediente.getDocumentoLegal() != null) {
-                                /*XXX Es un expediente de Contrato/Adenda, se deben obtener los botones dependiendo del estado del documento
-                                 *  y del rol que esta viendo el expediente.
+                                /*
+                                 * XXX Es un expediente de Contrato/Adenda, se deben obtener los botones
+                                 * dependiendo del estado del documento
+                                 * y del rol que esta viendo el expediente.
                                  */
-                                if (expediente.getDocumentoLegal().getContrato() != null) {
-                                    botones = revisarExpedienteService.obtenerBotonesExceptoParametro(perfil, expediente, usuario, ut.isResponsable(), expediente.getDocumentoLegal().getEstado(), Constantes.PARAMETRO_ADENDA);
-                                    LOGGER.info("-------------CASO CONTRATO-------------");
-                                    LOGGER.info(botones);
-                                    LOGGER.info("---------------------------");
-                                } else if (expediente.getDocumentoLegal().getAdenda() != null) {
-                                    botones = revisarExpedienteService.obtenerBotonesExceptoParametro(perfil, expediente, usuario, ut.isResponsable(), expediente.getDocumentoLegal().getEstado(), Constantes.PARAMETRO_CONTRATO);
-                                    LOGGER.info("-------------CASO ADENDAS--------------");
-                                    LOGGER.info(botones);
-                                    LOGGER.info("---------------------------------------");
-                                } else {
-                                    botones = new ArrayList<Boton>();
-                                }
+                                // USAR LA NUEVA MATRIZ DE ESTADOS VS ROLES
+                                botones = revisarExpedienteService.obtenerBotonesMatrizEstadosRoles(expediente, usuario,
+                                        perfil, expediente.getDocumentoLegal().getEstado());
+                                LOGGER.info(
+                                        "-------------USANDO NUEVA MATRIZ ESTADOS VS ROLES (RevisarBuscarDocumento)-------------");
+                                LOGGER.info("Expediente: " + expediente.getId() + ", Usuario: " + usuario.getId()
+                                        + ", Estado: " + expediente.getDocumentoLegal().getEstado());
+                                LOGGER.info("Botones obtenidos: " + (botones != null ? botones.size() : 0));
+                                LOGGER.info(
+                                        "--------------------------------------------------------------------------------");
                             } else {
-                                botones = revisarExpedienteService.obtenerBotones(expediente, perfil, ut.isResponsable(), estado);
+                                botones = revisarExpedienteService.obtenerBotones(expediente, perfil,
+                                        ut.isResponsable(), estado);
                                 LOGGER.info("------------CASO SIN DOCUMENTO LEGAL--------------");
                                 LOGGER.info(botones);
                                 LOGGER.info("--------------------------------------------------");
@@ -221,27 +227,31 @@ public class RevisarBuscarDocumentoServiceImpl implements RevisarBuscarDocumento
                         detalleContratoBean.setBotones(botones);
 
                         if (expediente.getDocumentoLegal() != null) {
-                            detalleContratoBean.setEstadoDl(AppUtil.getNombreEstadoDL(expediente.getDocumentoLegal().getEstado()));
+                            detalleContratoBean
+                                    .setEstadoDl(AppUtil.getNombreEstadoDL(expediente.getDocumentoLegal().getEstado()));
                         }
 
-                        //RETORNA LA VISTA DE CONTRATO
+                        // RETORNA LA VISTA DE CONTRATO
                         LOGGER.info("RevisarExpedienteController/revisarTraza - Tipo de proceso :" + tipoProcesoAqui);
 
                         if (botones != null) {
                             if (tipoProcesoAqui == 5) {
-                                agregarBotonFirmaElectronica(detalleContratoBean, botones, expediente.getDocumentoLegal().getEstado(), expediente.getFirmaElectronica());
+                                agregarBotonFirmaElectronica(detalleContratoBean, botones,
+                                        expediente.getDocumentoLegal().getEstado(), expediente.getFirmaElectronica());
                                 Integer idDocumentoLegal = expediente.getDocumentoLegal().getId();
 
-                                LOGGER.info("---------------------------------------------------------------------------------------");
+                                LOGGER.info(
+                                        "---------------------------------------------------------------------------------------");
                                 LOGGER.info("IdDocumentoLegal + datosContrato/revisarAdenda");
                                 LOGGER.info(idDocumentoLegal);
-                                LOGGER.info("---------------------------------------------------------------------------------------");
+                                LOGGER.info(
+                                        "---------------------------------------------------------------------------------------");
 
                                 HcAdenda hcAdenda = hcAdendaRepository.findById(idDocumentoLegal);
                                 HcDocumentoLegal documentoLegal = detalleContratoBean.getDocumentoLegal();
                                 documentoLegal.setAdenda(hcAdenda);
 
-                                //Envio de datos del tipo de adenda
+                                // Envio de datos del tipo de adenda
                                 detalleContratoBean.setDocumentoLegal(documentoLegal);
                                 quitarBotonSeguridad(usuario, detalleContratoBean, botones);
                             }
@@ -260,25 +270,39 @@ public class RevisarBuscarDocumentoServiceImpl implements RevisarBuscarDocumento
                         List<Boton> listaBotones = null;
 
                         if (expediente.getDocumentoLegal() != null) {
-                            /*Es un expediente de Contrato/Adenda, se deben obtener los botones dependiendo del estado del documento
-                             *  y del rol que esta viendo el expediente.
+                            /*
+                             * Es un expediente de Contrato/Adenda, se deben obtener los botones dependiendo
+                             * del estado del documento
+                             * y del rol que esta viendo el expediente.
                              */
                             if (expediente.getDocumentoLegal().getContrato() != null) {
-                                LOGGER.info("---------------------------------------------------------------------------------------");
+                                LOGGER.info(
+                                        "---------------------------------------------------------------------------------------");
                                 LOGGER.info("DOCUMENTO LEGAL => CONTRATO");
-                                LOGGER.info("---------------------------------------------------------------------------------------");
+                                LOGGER.info(
+                                        "---------------------------------------------------------------------------------------");
 
-                                listaBotones = revisarExpedienteService.obtenerBotonesExceptoParametro(perfil, expediente, usuario, false, expediente.getDocumentoLegal().getEstado(), Constantes.PARAMETRO_ADENDA);
+                                LOGGER.info(
+                                        "-------------USANDO NUEVA MATRIZ ESTADOS VS ROLES (RevisarBuscarDocumento - Sección 1)-------------");
+                                listaBotones = revisarExpedienteService.obtenerBotonesMatrizEstadosRoles(expediente,
+                                        usuario, perfil, expediente.getDocumentoLegal().getEstado());
                             } else if (expediente.getDocumentoLegal().getAdenda() != null) {
-                                LOGGER.info("---------------------------------------------------------------------------------------");
+                                LOGGER.info(
+                                        "---------------------------------------------------------------------------------------");
                                 LOGGER.info("DOCUMENTO LEGAL => ADENDA");
-                                LOGGER.info("---------------------------------------------------------------------------------------");
+                                LOGGER.info(
+                                        "---------------------------------------------------------------------------------------");
 
-                                listaBotones = revisarExpedienteService.obtenerBotonesExceptoParametro(perfil, expediente, usuario, false, expediente.getDocumentoLegal().getEstado(), Constantes.PARAMETRO_CONTRATO);
+                                LOGGER.info(
+                                        "-------------USANDO NUEVA MATRIZ ESTADOS VS ROLES (RevisarBuscarDocumento - Sección 2)-------------");
+                                listaBotones = revisarExpedienteService.obtenerBotonesMatrizEstadosRoles(expediente,
+                                        usuario, perfil, expediente.getDocumentoLegal().getEstado());
                             } else {
-                                LOGGER.info("---------------------------------------------------------------------------------------");
+                                LOGGER.info(
+                                        "---------------------------------------------------------------------------------------");
                                 LOGGER.info("DOCUMENTO LEGAL => NO EXISTE");
-                                LOGGER.info("---------------------------------------------------------------------------------------");
+                                LOGGER.info(
+                                        "---------------------------------------------------------------------------------------");
                                 listaBotones = new ArrayList<Boton>();
                             }
                         } else {
@@ -288,7 +312,8 @@ public class RevisarBuscarDocumentoServiceImpl implements RevisarBuscarDocumento
                         detalleContratoBean.setBotones(listaBotones);
 
                         if (expediente.getDocumentoLegal() != null) {
-                            detalleContratoBean.setEstadoDl(AppUtil.getNombreEstadoDL(expediente.getDocumentoLegal().getEstado()));
+                            detalleContratoBean
+                                    .setEstadoDl(AppUtil.getNombreEstadoDL(expediente.getDocumentoLegal().getEstado()));
                         }
 
                         LOGGER.info("TIPO DE PROCESO B:" + tipoProcesoAqui);
@@ -300,7 +325,8 @@ public class RevisarBuscarDocumentoServiceImpl implements RevisarBuscarDocumento
 
                     if (documentos != null) {
                         for (Documento documento : documentos) {
-                            List<CampoPorDocumento> campoPorDocumentos = revisarExpedienteService.obtenerCamposPorDocumento(documento);
+                            List<CampoPorDocumento> campoPorDocumentos = revisarExpedienteService
+                                    .obtenerCamposPorDocumento(documento);
                             totalCampos.add(campoPorDocumentos);
                         }
                     }
@@ -310,7 +336,8 @@ public class RevisarBuscarDocumentoServiceImpl implements RevisarBuscarDocumento
                     detalleContratoBean.setBotones(listaBotones);
 
                     if (expediente.getDocumentoLegal() != null) {
-                        detalleContratoBean.setEstadoDl(AppUtil.getNombreEstadoDL(expediente.getDocumentoLegal().getEstado()));
+                        detalleContratoBean
+                                .setEstadoDl(AppUtil.getNombreEstadoDL(expediente.getDocumentoLegal().getEstado()));
                     }
                     LOGGER.info("TIPO DE PROCESO C:" + tipoProcesoAqui);
 
@@ -318,32 +345,48 @@ public class RevisarBuscarDocumentoServiceImpl implements RevisarBuscarDocumento
                         quitarBotonSeguridad(usuario, detalleContratoBean, listaBotones);
                     }
 
-                    //VALIDACIONES DE BOTONES NO RESPONSABLE DE TRAZA
+                    // VALIDACIONES DE BOTONES NO RESPONSABLE DE TRAZA
 
                     if (expediente.getDocumentoLegal().getContrato() != null) {
-                        LOGGER.info("---------------------------------------------------------------------------------------");
+                        LOGGER.info(
+                                "---------------------------------------------------------------------------------------");
                         LOGGER.info("DOCUMENTO LEGAL => CONTRATO");
-                        LOGGER.info("---------------------------------------------------------------------------------------");
+                        LOGGER.info(
+                                "---------------------------------------------------------------------------------------");
 
-                        listaBotones = revisarExpedienteService.obtenerBotonesExceptoParametro(perfil, expediente, usuario, false, expediente.getDocumentoLegal().getEstado(), Constantes.PARAMETRO_ADENDA);
+                        LOGGER.info(
+                                "-------------USANDO NUEVA MATRIZ ESTADOS VS ROLES (RevisarBuscarDocumento - Sección 3)-------------");
+                        listaBotones = revisarExpedienteService.obtenerBotonesMatrizEstadosRoles(expediente, usuario,
+                                perfil, expediente.getDocumentoLegal().getEstado());
                     } else if (expediente.getDocumentoLegal().getAdenda() != null) {
-                        LOGGER.info("---------------------------------------------------------------------------------------");
+                        LOGGER.info(
+                                "---------------------------------------------------------------------------------------");
                         LOGGER.info("DOCUMENTO LEGAL => ADENDA");
-                        LOGGER.info("---------------------------------------------------------------------------------------");
+                        LOGGER.info(
+                                "---------------------------------------------------------------------------------------");
 
-                        listaBotones = revisarExpedienteService.obtenerBotonesExceptoParametro(perfil, expediente, usuario, false, expediente.getDocumentoLegal().getEstado(), Constantes.PARAMETRO_CONTRATO);
+                        LOGGER.info(
+                                "-------------USANDO NUEVA MATRIZ ESTADOS VS ROLES (RevisarBuscarDocumento - Sección 4)-------------");
+                        listaBotones = revisarExpedienteService.obtenerBotonesMatrizEstadosRoles(expediente, usuario,
+                                perfil, expediente.getDocumentoLegal().getEstado());
 
                     }
 
-                    //VALIDACION DE BOTONES RESPONSABLE DE TRAZA
+                    // VALIDACION DE BOTONES RESPONSABLE DE TRAZA
                     if (ut != null) {
                         if (expediente.getDocumentoLegal().getContrato() != null) {
-                            listaBotones = revisarExpedienteService.obtenerBotonesExceptoParametro(perfil, expediente, usuario, ut.isResponsable(), expediente.getDocumentoLegal().getEstado(), Constantes.PARAMETRO_ADENDA);
+                            LOGGER.info(
+                                    "-------------USANDO NUEVA MATRIZ ESTADOS VS ROLES (RevisarBuscarDocumento - Sección 5)-------------");
+                            listaBotones = revisarExpedienteService.obtenerBotonesMatrizEstadosRoles(expediente,
+                                    usuario, perfil, expediente.getDocumentoLegal().getEstado());
                             LOGGER.info("-------------CASO CONTRATO-------------");
                             LOGGER.info(listaBotones);
                             LOGGER.info("---------------------------");
                         } else if (expediente.getDocumentoLegal().getAdenda() != null) {
-                            listaBotones = revisarExpedienteService.obtenerBotonesExceptoParametro(perfil, expediente, usuario, ut.isResponsable(), expediente.getDocumentoLegal().getEstado(), Constantes.PARAMETRO_CONTRATO);
+                            LOGGER.info(
+                                    "-------------USANDO NUEVA MATRIZ ESTADOS VS ROLES (RevisarBuscarDocumento - Sección 6)-------------");
+                            listaBotones = revisarExpedienteService.obtenerBotonesMatrizEstadosRoles(expediente,
+                                    usuario, perfil, expediente.getDocumentoLegal().getEstado());
                             LOGGER.info("-------------CASO ADENDAS--------------");
                             LOGGER.info(listaBotones);
                             LOGGER.info("---------------------------------------");
@@ -354,12 +397,13 @@ public class RevisarBuscarDocumentoServiceImpl implements RevisarBuscarDocumento
                     detalleContratoBean.setBotones(listaBotones);
 
                     Expediente expedienteFormateado = detalleContratoBean.getExpediente();
-                    HcDocumentoLegal hcDocumentoLegalFormateado = detalleContratoBean.getExpediente().getDocumentoLegal();
-                    HcContrato contratoFormateado = detalleContratoBean.getExpediente().getDocumentoLegal().getContrato();
+                    HcDocumentoLegal hcDocumentoLegalFormateado = detalleContratoBean.getExpediente()
+                            .getDocumentoLegal();
+                    HcContrato contratoFormateado = detalleContratoBean.getExpediente().getDocumentoLegal()
+                            .getContrato();
                     HcAdenda adendaFormateada = detalleContratoBean.getExpediente().getDocumentoLegal().getAdenda();
                     Traza trazaFormateada = detalleContratoBean.getTraza();
                     List<Documento> documentosFormateado = new ArrayList<>();
-
 
                     for (int i = 0; i < detalleContratoBean.getExpediente().getDocumentos().size(); i++) {
 
@@ -381,20 +425,20 @@ public class RevisarBuscarDocumentoServiceImpl implements RevisarBuscarDocumento
                     detalleContratoBean.setDocumentos(documentosFormateado);
                     detalleContratoBean.setTraza(trazaFormateada);
 
-                    //Expediente limpio
+                    // Expediente limpio
                     expedienteFormateado.setDocumentoLegal(null);
                     expedienteFormateado.setDocumentos(null);
 
-                    //DocumentoLegal limpio
+                    // DocumentoLegal limpio
                     hcDocumentoLegalFormateado.setExpediente(null);
 
-                    //Contrato limpio
+                    // Contrato limpio
                     if (contratoFormateado != null) {
                         contratoFormateado.setDocumentoLegal(null);
                         hcDocumentoLegalFormateado.setContrato(contratoFormateado);
                     }
 
-                    //Adenda limpio
+                    // Adenda limpio
                     if (adendaFormateada != null) {
                         HcContrato contratoAdendaFormateado = adendaFormateada.getContrato();
                         contratoAdendaFormateado.setDocumentoLegal(null);
@@ -403,14 +447,15 @@ public class RevisarBuscarDocumentoServiceImpl implements RevisarBuscarDocumento
                         detalleContratoBean.setContrato(null);
                     }
 
-                    //Traza limpio
+                    // Traza limpio
                     trazaFormateada.setExpediente(null);
 
                 }
             } else {
 
                 Expediente expedienteFormateado = expedienteRepository.findById(idExpediente);
-                HcDocumentoLegal hcDocumentoLegalFormateado = hcDocumentoLegalRepository.findByIdExpediente(expedienteFormateado.getId());
+                HcDocumentoLegal hcDocumentoLegalFormateado = hcDocumentoLegalRepository
+                        .findByIdExpediente(expedienteFormateado.getId());
                 HcContrato contratoFormateado = hcDocumentoLegalFormateado.getContrato();
                 HcAdenda adendaFormateada = hcDocumentoLegalFormateado.getAdenda();
                 Traza trazaFormateada = trazaRepository.obtenerUltimaTrazaPorExpediente(expedienteFormateado.getId());
@@ -418,8 +463,10 @@ public class RevisarBuscarDocumentoServiceImpl implements RevisarBuscarDocumento
 
                 Proceso proceso = expedienteFormateado.getProceso();
 
-                if (proceso.getTipoProceso() != null && proceso.getTipoProceso().getAlerta().equals(Constantes.TIPO_PROCESO_ALERTA_PROCESO)) {
-                    detalleContratoBean.setFechaLimite(revisarExpedienteService.obtenerFechaLimite(expedienteFormateado, proceso.getPlazo()));
+                if (proceso.getTipoProceso() != null
+                        && proceso.getTipoProceso().getAlerta().equals(Constantes.TIPO_PROCESO_ALERTA_PROCESO)) {
+                    detalleContratoBean.setFechaLimite(
+                            revisarExpedienteService.obtenerFechaLimite(expedienteFormateado, proceso.getPlazo()));
                 } else {
                     detalleContratoBean.setFechaLimite(null);
                 }
@@ -446,20 +493,20 @@ public class RevisarBuscarDocumentoServiceImpl implements RevisarBuscarDocumento
                 detalleContratoBean.setDocumentos(documentosFormateado);
                 detalleContratoBean.setTraza(trazaFormateada);
 
-                //Expediente limpio
+                // Expediente limpio
                 expedienteFormateado.setDocumentoLegal(null);
                 expedienteFormateado.setDocumentos(null);
 
-                //DocumentoLegal limpio
+                // DocumentoLegal limpio
                 hcDocumentoLegalFormateado.setExpediente(null);
 
-                //Contrato limpio
+                // Contrato limpio
                 if (contratoFormateado != null) {
                     contratoFormateado.setDocumentoLegal(null);
                     hcDocumentoLegalFormateado.setContrato(contratoFormateado);
                 }
 
-                //Adenda limpio
+                // Adenda limpio
                 if (adendaFormateada != null) {
                     HcContrato contratoAdendaFormateado = adendaFormateada.getContrato();
                     contratoAdendaFormateado.setDocumentoLegal(null);
@@ -468,7 +515,7 @@ public class RevisarBuscarDocumentoServiceImpl implements RevisarBuscarDocumento
                     detalleContratoBean.setContrato(null);
                 }
 
-                //Traza limpio
+                // Traza limpio
                 trazaFormateada.setExpediente(null);
             }
 
@@ -490,347 +537,382 @@ public class RevisarBuscarDocumentoServiceImpl implements RevisarBuscarDocumento
         Expediente expediente = expedienteRepository.findById(idExpediente);
         LOGGER.info("Estado del expdiente [" + expediente.getEstado() + "]");
 
+        LOGGER.info("Controlador para ver detalle del expediente");
 
-            LOGGER.info("Controlador para ver detalle del expediente");
+        if (usuario != null) {
 
-            if (usuario != null) {
+            HcDocumentoLegal documentoLegal = hcDocumentoLegalRepository
+                    .obtenerHcDocumentoLegalPorExpediente(idExpediente);
 
-                HcDocumentoLegal documentoLegal = hcDocumentoLegalRepository.obtenerHcDocumentoLegalPorExpediente(idExpediente);
+            if (revisarExpedienteService.usuarioPuedeVerExpedienteConfidencial(usuario, expediente)) {
+                expediente.setDocumentos(revisarExpedienteService.obtenerDocumentos(expediente));
+                detalleExpedienteBean.setExpediente(expediente);
 
-                if (revisarExpedienteService.usuarioPuedeVerExpedienteConfidencial(usuario, expediente)) {
-                    expediente.setDocumentos(revisarExpedienteService.obtenerDocumentos(expediente));
-                    detalleExpedienteBean.setExpediente(expediente);
+                Traza traza = revisarExpedienteService.obtenerUltimaTraza(expediente.getId(), usuario.getId());
+                detalleExpedienteBean.setTraza(traza);
 
-                    Traza traza = revisarExpedienteService.obtenerUltimaTraza(expediente.getId(), usuario.getId());
-                    detalleExpedienteBean.setTraza(traza);
+                // Identificamos que tipo de proceso es
+                Integer tipoProcesoAqui = expediente.getProceso().getId();
+                Boolean tieneAccesoSolicitud = false;
+                Character estadoExpediente = expediente.getEstado();
 
-                    //Identificamos que tipo de proceso es
-                    Integer tipoProcesoAqui = expediente.getProceso().getId();
-                    Boolean tieneAccesoSolicitud = false;
-                    Character estadoExpediente = expediente.getEstado();
+                /* Si el usuario es responsable en la traza */
+                UsuarioPorTraza ut = revisarExpedienteService.obtenerUsuarioPorTraza(traza.getId(), usuario.getId());
+                List<UsuarioAccesoSolicitud> representantesConAcceso = usuarioAccesoSolicitudRepository
+                        .getUsuariosConAcceso(Constantes.ESTADO_ACCESO_REPRESENTANTE_HABILITADO);
 
-                    /* Si el usuario es responsable en la traza */
-                    UsuarioPorTraza ut = revisarExpedienteService.obtenerUsuarioPorTraza(traza.getId(), usuario.getId());
-                    List<UsuarioAccesoSolicitud> representantesConAcceso = usuarioAccesoSolicitudRepository.getUsuariosConAcceso(Constantes.ESTADO_ACCESO_REPRESENTANTE_HABILITADO);
+                // Validación para buscar representante
+                for (int i = 0; i < representantesConAcceso.size(); i++) {
+                    if (usuario.getId().equals(representantesConAcceso.get(i).getResponsable().getId())) {
+                        LOGGER.debug(
+                                "-----------------------------------RESULT--------------------------------------------");
+                        LOGGER.debug("SE ENCONTRO UNA COINCIDENCIA DE USUARIO");
+                        LOGGER.debug("USUARIO " + representantesConAcceso.get(i).getResponsable().getId());
+                        tieneAccesoSolicitud = true;
+                        LOGGER.debug("-------------------------------------------------------------------------------");
+                        break;
+                    }
+                }
 
-                    //Validación para buscar representante
-                    for (int i = 0; i < representantesConAcceso.size(); i++) {
-                        if (usuario.getId().equals(representantesConAcceso.get(i).getResponsable().getId())) {
-                            LOGGER.debug("-----------------------------------RESULT--------------------------------------------");
-                            LOGGER.debug("SE ENCONTRO UNA COINCIDENCIA DE USUARIO");
-                            LOGGER.debug("USUARIO " + representantesConAcceso.get(i).getResponsable().getId());
-                            tieneAccesoSolicitud = true;
-                            LOGGER.debug("-------------------------------------------------------------------------------");
-                            break;
-                        }
+                if (documentoLegal.getEstado().equals(Constantes.ESTADO_HC_ENVIADO_VISADO)) {
+                    tieneAccesoSolicitud = false;
+                }
+
+                if (ut == null) {
+                    Reemplazo reemplazo = revisarExpedienteService.buscarReemplazo(usuario.getId(),
+                            expediente.getProceso());
+                    if (reemplazo != null) {
+                        ut = revisarExpedienteService.obtenerUsuarioPorTraza(traza.getId(),
+                                reemplazo.getReemplazado().getId());
+                    }
+                }
+                if (perfil.getCodigo().equals(Constantes.PERFIL_MESA_DE_PARTES)
+                        && !expediente.getEstado().equals(Constantes.ESTADO_GUARDADO)) {
+                    Traza primeraTraza = revisarExpedienteService.getPrimeraTraza(expediente);
+                    List<Documento> documentos = expediente.getDocumentos();
+                    List<List<CampoPorDocumento>> totalCampos = new ArrayList<List<CampoPorDocumento>>();
+                    for (Documento documento : documentos) {
+                        totalCampos.add(revisarExpedienteService.obtenerCamposPorDocumento(documento));
                     }
 
-                    if (documentoLegal.getEstado().equals(Constantes.ESTADO_HC_ENVIADO_VISADO)) {
-                        tieneAccesoSolicitud = false;
-                    }
+                    detalleExpedienteBean.setCampos(totalCampos);
+                    detalleExpedienteBean.setObsTraza(primeraTraza.getObservacion());
 
-                    if (ut == null) {
-                        Reemplazo reemplazo = revisarExpedienteService.buscarReemplazo(usuario.getId(), expediente.getProceso());
-                        if (reemplazo != null) {
-                            ut = revisarExpedienteService.obtenerUsuarioPorTraza(traza.getId(), reemplazo.getReemplazado().getId());
+                    // return
+                    cleanResponse(detalleExpedienteBean);
+                    return detalleExpedienteBean;
+
+                } // Cuando se quiere ver el Expediente Registrado
+                else if (expediente.getEstado().equals(Constantes.ESTADO_REGISTRADO)) {
+
+                    if (ut != null || tieneAccesoSolicitud) {
+                        boolean multiple = traza.getPadre() != null;
+                        if (expediente.getProceso().getTipoProceso().getCodigo()
+                                .equals(Constantes.TIPO_PROCESO_INTALIO)) {
+                            String url = intalioService.getAjaxFormURL(usuario, expediente.getId());
+                            if (url != null) {
+                                detalleExpedienteBean.setUrl(url);
+                            }
                         }
-                    }
-                    if (perfil.getCodigo().equals(Constantes.PERFIL_MESA_DE_PARTES) && !expediente.getEstado().equals(Constantes.ESTADO_GUARDADO)) {
-                        Traza primeraTraza = revisarExpedienteService.getPrimeraTraza(expediente);
-                        List<Documento> documentos = expediente.getDocumentos();
-                        List<List<CampoPorDocumento>> totalCampos = new ArrayList<List<CampoPorDocumento>>();
-                        for (Documento documento : documentos) {
-                            totalCampos.add(revisarExpedienteService.obtenerCamposPorDocumento(documento));
+                        if (!tieneAccesoSolicitud) {
+                            if (!multiple && !ut.isBloqueado()) {
+                                revisarExpedienteService.bloquearExpediente(ut);
+                            }
+                            /* Cambiar estado leido */
+                            revisarExpedienteService.cambiarEstadoLeido(ut);
                         }
-
-                        detalleExpedienteBean.setCampos(totalCampos);
-                        detalleExpedienteBean.setObsTraza(primeraTraza.getObservacion());
-
-                        //return
-                        cleanResponse(detalleExpedienteBean);
-                        return detalleExpedienteBean;
-
-                    } // Cuando se quiere ver el Expediente Registrado
-                    else if (expediente.getEstado().equals(Constantes.ESTADO_REGISTRADO)) {
-
-                        if (ut != null || tieneAccesoSolicitud) {
-                            boolean multiple = traza.getPadre() != null;
-                            if (expediente.getProceso().getTipoProceso().getCodigo().equals(Constantes.TIPO_PROCESO_INTALIO)) {
-                                String url = intalioService.getAjaxFormURL(usuario, expediente.getId());
-                                if (url != null) {
-                                    detalleExpedienteBean.setUrl(url);
-                                }
-                            }
-                            if (!tieneAccesoSolicitud) {
-                                if (!multiple && !ut.isBloqueado()) {
-                                    revisarExpedienteService.bloquearExpediente(ut);
-                                }
-                                /* Cambiar estado leido */
-                                revisarExpedienteService.cambiarEstadoLeido(ut);
-                            }
-
-                            List<Boton> listaBotones = null;
-
-                            if (multiple) {
-                                listaBotones = revisarExpedienteService.obtenerBotones(expediente, perfil, ut.getEstado());
-
-                            } else if (traza.getEstado() != null && traza.getEstado().equals(Constantes.ESTADO_PAUSADO)) {
-                                listaBotones = revisarExpedienteService.obtenerBotones(expediente, perfil, false, expediente.getEstado());
-                            } else if (expediente.getDocumentoLegal() != null) {
-                                if (expediente.getDocumentoLegal().getContrato() != null && !tieneAccesoSolicitud) {
-                                    listaBotones = revisarExpedienteService.obtenerBotonesExceptoParametro(perfil, expediente, usuario, ut.isResponsable(), expediente.getDocumentoLegal().getEstado(), Constantes.PARAMETRO_ADENDA);
-
-                                } else if (expediente.getDocumentoLegal().getContrato() != null && tieneAccesoSolicitud) {
-                                    listaBotones = revisarExpedienteService.obtenerBotonesExceptoParametro(perfil, expediente, usuario, true, expediente.getDocumentoLegal().getEstado(), Constantes.PARAMETRO_ADENDA);
-
-                                } else if (expediente.getDocumentoLegal().getAdenda() != null && !tieneAccesoSolicitud) {
-                                    listaBotones = revisarExpedienteService.obtenerBotonesExceptoParametro(perfil, expediente, usuario, ut.isResponsable(), expediente.getDocumentoLegal().getEstado(), Constantes.PARAMETRO_CONTRATO);
-
-                                } else if (expediente.getDocumentoLegal().getAdenda() != null && tieneAccesoSolicitud) {
-                                    listaBotones = revisarExpedienteService.obtenerBotonesExceptoParametro(perfil, expediente, usuario, true, expediente.getDocumentoLegal().getEstado(), Constantes.PARAMETRO_CONTRATO);
-                                } else {
-                                    listaBotones = new ArrayList<Boton>();
-                                }
-                            } else {
-                                if (ut != null) {
-                                    listaBotones = revisarExpedienteService.obtenerBotones(expediente, perfil, ut.isResponsable(), expediente.getEstado());
-                                }
-                            }
-
-                            if (listaBotones != null && !listaBotones.isEmpty()) {
-                                for (Boton boton : listaBotones) {
-                                    if (expediente.getPadre() != null) {
-                                        if (boton.getVerParalela() != null && boton.getVerParalela()) {
-                                            boton.setBloqueado(true);
-                                        }
-                                    }
-                                    if (boton.getBloqueable()) {
-                                        if (ut != null && ut.isBloqueado()) {
-                                            LOGGER.info("bloquear el boton");
-                                            boton.setBloqueado(true);
-                                        }
-                                    }
-                                }
-                                detalleExpedienteBean.setBotones(listaBotones);
-                            }
-
-                            if (expediente.getDocumentoLegal() != null) {
-                                detalleExpedienteBean.setEstadoDl(AppUtil.getNombreEstadoDL(expediente.getDocumentoLegal().getEstado()));
-                            }
-
-                            if (tipoProcesoAqui == 5) {
-
-                                agregarBotonFirmaElectronica(detalleExpedienteBean, listaBotones, expediente.getDocumentoLegal().getEstado(), expediente.getFirmaElectronica());
-
-                                Integer idDocumentoLegal = expediente.getDocumentoLegal().getId();
-                                HcAdenda hcAdenda = hcAdendaRepository.findById(idDocumentoLegal);
-                                detalleExpedienteBean.setAdenda(hcAdenda);
-                                quitarBotonSeguridad(usuario, detalleExpedienteBean, listaBotones);
-
-                                //return
-                                cleanResponse(detalleExpedienteBean);
-                                return detalleExpedienteBean;
-                            }
-                            /* Solo aprobar si es el responsable */
-                            quitarBotonSeguridad(usuario, detalleExpedienteBean, listaBotones);
-
-
-                            // return
-                            cleanResponse(detalleExpedienteBean);
-                            return detalleExpedienteBean;
-                        }
-                        List<Documento> documentos = expediente.getDocumentos();
-                        List<List<CampoPorDocumento>> totalCampos = new ArrayList<List<CampoPorDocumento>>();
-                        for (Documento documento : documentos) {
-                            totalCampos.add(revisarExpedienteService.obtenerCamposPorDocumento(documento));
-                        }
-                        detalleExpedienteBean.setCampos(totalCampos);
 
                         List<Boton> listaBotones = null;
 
-                        if (expediente.getDocumentoLegal() != null) {
-                            if (expediente.getDocumentoLegal().getContrato() != null) {
-                                listaBotones = revisarExpedienteService.obtenerBotonesPorRolExceptoParametro(perfil, expediente, usuario, false, expediente.getDocumentoLegal().getEstado(), Constantes.PARAMETRO_ADENDA);
-                            } else if (expediente.getDocumentoLegal().getAdenda() != null) {
-                                listaBotones = revisarExpedienteService.obtenerBotonesPorRolExceptoParametro(perfil, expediente, usuario, false, expediente.getDocumentoLegal().getEstado(), Constantes.PARAMETRO_CONTRATO);
-                            } else {
-                                listaBotones = new ArrayList<Boton>();
-                            }
+                        if (multiple) {
+                            listaBotones = revisarExpedienteService.obtenerBotones(expediente, perfil, ut.getEstado());
+
+                        } else if (traza.getEstado() != null && traza.getEstado().equals(Constantes.ESTADO_PAUSADO)) {
+                            listaBotones = revisarExpedienteService.obtenerBotones(expediente, perfil, false,
+                                    expediente.getEstado());
+                        } else if (expediente.getDocumentoLegal() != null) {
+                            // USAR LA NUEVA MATRIZ DE ESTADOS VS ROLES
+                            listaBotones = revisarExpedienteService.obtenerBotonesMatrizEstadosRoles(expediente,
+                                    usuario, perfil, expediente.getDocumentoLegal().getEstado());
+                            LOGGER.info(
+                                    "-------------USANDO NUEVA MATRIZ ESTADOS VS ROLES (RevisarBuscarDocumento - Sección 2)-------------");
+                            LOGGER.info("Expediente: " + expediente.getId() + ", Usuario: " + usuario.getId()
+                                    + ", Estado: " + expediente.getDocumentoLegal().getEstado());
+                            LOGGER.info("Botones obtenidos: " + (listaBotones != null ? listaBotones.size() : 0));
+                            LOGGER.info(
+                                    "-------------------------------------------------------------------------------------");
                         } else {
-                            listaBotones = revisarExpedienteService.obtenerBotonesMostrarCargo(perfil);
+                            if (ut != null) {
+                                listaBotones = revisarExpedienteService.obtenerBotones(expediente, perfil,
+                                        ut.isResponsable(), expediente.getEstado());
+                            }
                         }
 
-                        if (!verificarRol(this.revisarExpedienteService.buscarRolesPorUsuario(usuario.getId()), Constantes.CODIGO_ROL_ABOGADO_RESPONSABLE)) {
-                            modificarBotones(listaBotones, Constantes.URL_ENVIAR_VB);
+                        if (listaBotones != null && !listaBotones.isEmpty()) {
+                            for (Boton boton : listaBotones) {
+                                if (expediente.getPadre() != null) {
+                                    if (boton.getVerParalela() != null && boton.getVerParalela()) {
+                                        boton.setBloqueado(true);
+                                    }
+                                }
+                                if (boton.getBloqueable()) {
+                                    if (ut != null && ut.isBloqueado()) {
+                                        LOGGER.info("bloquear el boton");
+                                        boton.setBloqueado(true);
+                                    }
+                                }
+                            }
+                            detalleExpedienteBean.setBotones(listaBotones);
                         }
-                        detalleExpedienteBean.setBotones(listaBotones);
 
                         if (expediente.getDocumentoLegal() != null) {
-                            detalleExpedienteBean.setEstadoDl(AppUtil.getNombreEstadoDL(expediente.getDocumentoLegal().getEstado()));
+                            detalleExpedienteBean
+                                    .setEstadoDl(AppUtil.getNombreEstadoDL(expediente.getDocumentoLegal().getEstado()));
                         }
 
                         if (tipoProcesoAqui == 5) {
 
-                            agregarBotonFirmaElectronica(detalleExpedienteBean, listaBotones, expediente.getDocumentoLegal().getEstado(), expediente.getFirmaElectronica());
+                            agregarBotonFirmaElectronica(detalleExpedienteBean, listaBotones,
+                                    expediente.getDocumentoLegal().getEstado(), expediente.getFirmaElectronica());
 
                             Integer idDocumentoLegal = expediente.getDocumentoLegal().getId();
                             HcAdenda hcAdenda = hcAdendaRepository.findById(idDocumentoLegal);
                             detalleExpedienteBean.setAdenda(hcAdenda);
                             quitarBotonSeguridad(usuario, detalleExpedienteBean, listaBotones);
 
-                            //return
+                            // return
                             cleanResponse(detalleExpedienteBean);
                             return detalleExpedienteBean;
                         }
-
+                        /* Solo aprobar si es el responsable */
                         quitarBotonSeguridad(usuario, detalleExpedienteBean, listaBotones);
 
-                        //return
+                        // return
                         cleanResponse(detalleExpedienteBean);
                         return detalleExpedienteBean;
-                    } // Cuando se quiere modificar un Expediente Guardado
-                    else if (expediente.getEstado().equals(Constantes.ESTADO_GUARDADO)) {
-                        if (expediente.getDocumentoLegal() != null) {
-                            //XXX
-                            //Es una solicitud guardada, debe mostrarse el formulario para solicitudes
-                            detalleExpedienteBean.setIdResponsable(expediente.getDocumentoLegal().getResponsable().getId());
-                            detalleExpedienteBean.setNombreResponsable(expediente.getDocumentoLegal().getResponsable().getNombres() + " " + expediente.getDocumentoLegal().getResponsable().getApellidos());
+                    }
+                    List<Documento> documentos = expediente.getDocumentos();
+                    List<List<CampoPorDocumento>> totalCampos = new ArrayList<List<CampoPorDocumento>>();
+                    for (Documento documento : documentos) {
+                        totalCampos.add(revisarExpedienteService.obtenerCamposPorDocumento(documento));
+                    }
+                    detalleExpedienteBean.setCampos(totalCampos);
 
-                            detalleExpedienteBean.setProcesos(revisarExpedienteService.listarProcesos());
-                            expediente.setDocumentoLegal(null);
-                            detalleExpedienteBean.setExpediente(expediente);
+                    List<Boton> listaBotones = null;
 
+                    if (expediente.getDocumentoLegal() != null) {
+                        LOGGER.info(
+                                "-------------USANDO NUEVA MATRIZ ESTADOS VS ROLES (RevisarBuscarDocumento - Sección 3)-------------");
+                        LOGGER.info("Expediente: " + expediente.getId() + ", Usuario: " + usuario.getId()
+                                + ", Estado: " + expediente.getDocumentoLegal().getEstado());
 
-                            //return
-                            cleanResponse(detalleExpedienteBean);
-                            return detalleExpedienteBean;
-                        } else {
-                            detalleExpedienteBean.setBotones(revisarExpedienteService.obtenerBotones(perfil));
-                            List<Usuario> usuarios = revisarExpedienteService.devolverUsuariosResponsablesPorProceso(expediente.getProceso().getId());
+                        listaBotones = revisarExpedienteService.obtenerBotonesMatrizEstadosRoles(
+                                expediente, usuario, perfil, expediente.getDocumentoLegal().getEstado());
 
-                            String texto = "";
-                            for (int i = 0; i < usuarios.size(); i++) {
-                                if (i < usuarios.size() - 1) {
-                                    texto += usuarios.get(i).getNombres() + " " + usuarios.get(i).getApellidos() + ", ";
-                                } else {
-                                    texto += usuarios.get(i).getNombres() + " " + usuarios.get(i).getApellidos();
-                                }
-                            }
-                            boolean flagCliente = revisarExpedienteService.devolverFlagCliente(expediente.getProceso().getId());
-                            detalleExpedienteBean.setTexto(texto);
-                            detalleExpedienteBean.setFlag(true);
-                            detalleExpedienteBean.setExpediente(expediente);
-                            /* Obtengo el proceso */
-                            if (expediente.getProceso().getTipoProceso().getCodigo().equals(Constantes.CODIGO_COMUNICACIONES_INTERNAS)) {
-                                detalleExpedienteBean.setInternas(true);
+                        LOGGER.info("Botones obtenidos: " + (listaBotones != null ? listaBotones.size() : 0));
+                    } else {
+                        listaBotones = revisarExpedienteService.obtenerBotonesMostrarCargo(perfil);
+                    }
 
+                    if (!verificarRol(this.revisarExpedienteService.buscarRolesPorUsuario(usuario.getId()),
+                            Constantes.CODIGO_ROL_ABOGADO_RESPONSABLE)) {
+                        modificarBotones(listaBotones, Constantes.URL_ENVIAR_VB);
+                    }
+                    detalleExpedienteBean.setBotones(listaBotones);
+
+                    if (expediente.getDocumentoLegal() != null) {
+                        detalleExpedienteBean
+                                .setEstadoDl(AppUtil.getNombreEstadoDL(expediente.getDocumentoLegal().getEstado()));
+                    }
+
+                    if (tipoProcesoAqui == 5) {
+
+                        agregarBotonFirmaElectronica(detalleExpedienteBean, listaBotones,
+                                expediente.getDocumentoLegal().getEstado(), expediente.getFirmaElectronica());
+
+                        Integer idDocumentoLegal = expediente.getDocumentoLegal().getId();
+                        HcAdenda hcAdenda = hcAdendaRepository.findById(idDocumentoLegal);
+                        detalleExpedienteBean.setAdenda(hcAdenda);
+                        quitarBotonSeguridad(usuario, detalleExpedienteBean, listaBotones);
+
+                        // return
+                        cleanResponse(detalleExpedienteBean);
+                        return detalleExpedienteBean;
+                    }
+
+                    quitarBotonSeguridad(usuario, detalleExpedienteBean, listaBotones);
+
+                    // return
+                    cleanResponse(detalleExpedienteBean);
+                    return detalleExpedienteBean;
+                } // Cuando se quiere modificar un Expediente Guardado
+                else if (expediente.getEstado().equals(Constantes.ESTADO_GUARDADO)) {
+                    if (expediente.getDocumentoLegal() != null) {
+                        // XXX
+                        // Es una solicitud guardada, debe mostrarse el formulario para solicitudes
+                        detalleExpedienteBean.setIdResponsable(expediente.getDocumentoLegal().getResponsable().getId());
+                        detalleExpedienteBean
+                                .setNombreResponsable(expediente.getDocumentoLegal().getResponsable().getNombres() + " "
+                                        + expediente.getDocumentoLegal().getResponsable().getApellidos());
+
+                        detalleExpedienteBean.setProcesos(revisarExpedienteService.listarProcesos());
+                        expediente.setDocumentoLegal(null);
+                        detalleExpedienteBean.setExpediente(expediente);
+
+                        // return
+                        cleanResponse(detalleExpedienteBean);
+                        return detalleExpedienteBean;
+                    } else {
+                        detalleExpedienteBean.setBotones(revisarExpedienteService.obtenerBotones(perfil));
+                        List<Usuario> usuarios = revisarExpedienteService
+                                .devolverUsuariosResponsablesPorProceso(expediente.getProceso().getId());
+
+                        String texto = "";
+                        for (int i = 0; i < usuarios.size(); i++) {
+                            if (i < usuarios.size() - 1) {
+                                texto += usuarios.get(i).getNombres() + " " + usuarios.get(i).getApellidos() + ", ";
                             } else {
-                                detalleExpedienteBean.setInternas(false);
+                                texto += usuarios.get(i).getNombres() + " " + usuarios.get(i).getApellidos();
                             }
-
-                            if (flagCliente) {
-                                detalleExpedienteBean.setEditar(true);
-                            }
-                            detalleExpedienteBean.setObservacion(expediente.getObservacionMp());
-
-                            /// return
-                            cleanResponse(detalleExpedienteBean);
-                            return detalleExpedienteBean;
                         }
-                    } else if (expediente.getEstado().equals(Constantes.ESTADO_ARCHIVADO)) {
-                        if (perfil.getCodigo().equals(Constantes.PERFIL_USUARIO_FINAL)) {
-                            //XXX
-                            List<Documento> documentos = expediente.getDocumentos();
-                            List<List<CampoPorDocumento>> totalCampos = new ArrayList<List<CampoPorDocumento>>();
-                            for (Documento documento : documentos) {
-                                totalCampos.add(revisarExpedienteService.obtenerCamposPorDocumento(documento));
+                        boolean flagCliente = revisarExpedienteService
+                                .devolverFlagCliente(expediente.getProceso().getId());
+                        detalleExpedienteBean.setTexto(texto);
+                        detalleExpedienteBean.setFlag(true);
+                        detalleExpedienteBean.setExpediente(expediente);
+                        /* Obtengo el proceso */
+                        if (expediente.getProceso().getTipoProceso().getCodigo()
+                                .equals(Constantes.CODIGO_COMUNICACIONES_INTERNAS)) {
+                            detalleExpedienteBean.setInternas(true);
+
+                        } else {
+                            detalleExpedienteBean.setInternas(false);
+                        }
+
+                        if (flagCliente) {
+                            detalleExpedienteBean.setEditar(true);
+                        }
+                        detalleExpedienteBean.setObservacion(expediente.getObservacionMp());
+
+                        /// return
+                        cleanResponse(detalleExpedienteBean);
+                        return detalleExpedienteBean;
+                    }
+                } else if (expediente.getEstado().equals(Constantes.ESTADO_ARCHIVADO)) {
+                    if (perfil.getCodigo().equals(Constantes.PERFIL_USUARIO_FINAL)) {
+                        // XXX
+                        List<Documento> documentos = expediente.getDocumentos();
+                        List<List<CampoPorDocumento>> totalCampos = new ArrayList<List<CampoPorDocumento>>();
+                        for (Documento documento : documentos) {
+                            totalCampos.add(revisarExpedienteService.obtenerCamposPorDocumento(documento));
+                        }
+                        detalleExpedienteBean.setCampos(totalCampos);
+                        List<Boton> botones = null;
+                        if (ut != null) {
+                            if (expediente.getDocumentoLegal() != null) {
+                                LOGGER.info(
+                                        "-------------USANDO NUEVA MATRIZ ESTADOS VS ROLES (RevisarBuscarDocumento - Archivado 1)-------------");
+                                LOGGER.info("Expediente: " + expediente.getId() + ", Usuario: " + usuario.getId()
+                                        + ", Estado: " + expediente.getDocumentoLegal().getEstado());
+
+                                botones = revisarExpedienteService.obtenerBotonesMatrizEstadosRoles(
+                                        expediente, usuario, perfil, expediente.getDocumentoLegal().getEstado());
+
+                                LOGGER.info("Botones obtenidos: " + (botones != null ? botones.size() : 0));
+                            } else {
+                                botones = revisarExpedienteService.obtenerBotones(expediente, perfil,
+                                        ut.isResponsable(), expediente.getEstado());
                             }
-                            detalleExpedienteBean.setCampos(totalCampos);
-                            List<Boton> botones = null;
-                            if (ut != null) {
-                                if (expediente.getDocumentoLegal() != null) {
-                                    if (expediente.getDocumentoLegal().getContrato() != null) {
-                                        botones = revisarExpedienteService.obtenerBotonesExceptoParametro(perfil, expediente, usuario, ut.isResponsable(), expediente.getEstado(), Constantes.PARAMETRO_ADENDA);
-                                    } else if (expediente.getDocumentoLegal().getAdenda() != null) {
-                                        botones = revisarExpedienteService.obtenerBotonesExceptoParametro(perfil, expediente, usuario, ut.isResponsable(), expediente.getEstado(), Constantes.PARAMETRO_CONTRATO);
-                                    } else {
-                                        botones = new ArrayList<Boton>();
+                        } else {
+                            if (expediente.getDocumentoLegal() != null) {
+                                LOGGER.info(
+                                        "-------------USANDO NUEVA MATRIZ ESTADOS VS ROLES (RevisarBuscarDocumento - Archivado 2)-------------");
+                                LOGGER.info("Expediente: " + expediente.getId() + ", Usuario: " + usuario.getId()
+                                        + ", Estado: " + expediente.getDocumentoLegal().getEstado());
+
+                                botones = revisarExpedienteService.obtenerBotonesMatrizEstadosRoles(
+                                        expediente, usuario, perfil, expediente.getDocumentoLegal().getEstado());
+
+                                LOGGER.info("=== ANÁLISIS PÉRDIDA DE BOTONES ===");
+                                LOGGER.info("Botones obtenidos de RevisarExpedienteService: "
+                                        + (botones != null ? botones.size() : 0));
+                                if (botones != null) {
+                                    for (Boton boton : botones) {
+                                        LOGGER.info("- Botón recibido: " + boton.getNombre() + " (URL: "
+                                                + boton.getUrl() + ")");
                                     }
-                                } else {
-                                    botones = revisarExpedienteService.obtenerBotones(expediente, perfil, ut.isResponsable(), expediente.getEstado());
                                 }
                             } else {
-                                if (expediente.getDocumentoLegal() != null) {
-                                    boolean esAbogado = revisarExpedienteService.usuarioEsAbogado(usuario);
-                                    boolean responsable = esAbogado ? true : false;
-
-                                    if (expediente.getDocumentoLegal().getContrato() != null) {
-                                        botones = revisarExpedienteService.obtenerBotonesExceptoParametro(perfil, expediente, usuario, responsable, expediente.getEstado(), Constantes.PARAMETRO_ADENDA);
-                                    } else if (expediente.getDocumentoLegal().getAdenda() != null) {
-                                        botones = revisarExpedienteService.obtenerBotonesExceptoParametro(perfil, expediente, usuario, responsable, expediente.getEstado(), Constantes.PARAMETRO_CONTRATO);
-                                    } else {
-                                        botones = new ArrayList<Boton>();
-                                    }
-                                } else {
-                                    botones = revisarExpedienteService.obtenerBotones(expediente, perfil, expediente.getEstado());
-                                }
+                                botones = revisarExpedienteService.obtenerBotones(expediente, perfil,
+                                        expediente.getEstado());
                             }
+                        }
 
-                            detalleExpedienteBean.setBotones(botones);
-                            if (expediente.getDocumentoLegal() != null) {
-                                detalleExpedienteBean.setEstadoDl(AppUtil.getNombreEstadoDL(expediente.getDocumentoLegal().getEstado()));
-                            }
+                        LOGGER.info("=== ANTES DE setBotones() ===");
+                        LOGGER.info("Botones a establecer: " + (botones != null ? botones.size() : 0));
+                        detalleExpedienteBean.setBotones(botones);
+                        LOGGER.info("=== DESPUÉS DE setBotones() ===");
+                        LOGGER.info("Botones en bean: " + (detalleExpedienteBean.getBotones() != null
+                                ? detalleExpedienteBean.getBotones().size()
+                                : 0));
+                        if (expediente.getDocumentoLegal() != null) {
+                            detalleExpedienteBean
+                                    .setEstadoDl(AppUtil.getNombreEstadoDL(expediente.getDocumentoLegal().getEstado()));
+                        }
 
-                            if (tipoProcesoAqui == 5) {
-                                agregarBotonFirmaElectronica(detalleExpedienteBean, botones, expediente.getDocumentoLegal().getEstado(), expediente.getFirmaElectronica());
-                                Integer idDocumentoLegal = expediente.getDocumentoLegal().getId();
-                                HcAdenda hcAdenda = hcAdendaRepository.findById(idDocumentoLegal);
-                                detalleExpedienteBean.setAdenda(hcAdenda);
-
-                                quitarBotonSeguridad(usuario, detalleExpedienteBean, botones);
-
-                                // return
-                                cleanResponse(detalleExpedienteBean);
-                                return detalleExpedienteBean;
-                            }
+                        if (tipoProcesoAqui == 5) {
+                            agregarBotonFirmaElectronica(detalleExpedienteBean, botones,
+                                    expediente.getDocumentoLegal().getEstado(), expediente.getFirmaElectronica());
+                            Integer idDocumentoLegal = expediente.getDocumentoLegal().getId();
+                            HcAdenda hcAdenda = hcAdendaRepository.findById(idDocumentoLegal);
+                            detalleExpedienteBean.setAdenda(hcAdenda);
 
                             quitarBotonSeguridad(usuario, detalleExpedienteBean, botones);
 
                             // return
                             cleanResponse(detalleExpedienteBean);
                             return detalleExpedienteBean;
-
                         }
-                    } else {
-                        /* Here */
-                        if (perfil.getCodigo().equals(Constantes.PERFIL_USUARIO_FINAL)) {
-                            List<Documento> documentos = expediente.getDocumentos();
-                            List<List<CampoPorDocumento>> totalCampos = new ArrayList<List<CampoPorDocumento>>();
-                            for (Documento documento : documentos) {
-                                totalCampos.add(revisarExpedienteService.obtenerCamposPorDocumento(documento));
-                            }
-                            detalleExpedienteBean.setCampos(totalCampos);
 
-                            List<Boton> listaBotones = revisarExpedienteService.obtenerBotones(expediente, perfil, false, expediente.getEstado());
-                            detalleExpedienteBean.setBotones(listaBotones);
-                            if (expediente.getDocumentoLegal() != null) {
-                                detalleExpedienteBean.setEstadoDl(AppUtil.getNombreEstadoDL(expediente.getDocumentoLegal().getEstado()));
-                            }
-                            quitarBotonSeguridad(usuario, detalleExpedienteBean, listaBotones);
-                            cleanResponse(detalleExpedienteBean);
-                            return detalleExpedienteBean;
-                            // return
-                        }
+                        quitarBotonSeguridad(usuario, detalleExpedienteBean, botones);
+
+                        // return
                         cleanResponse(detalleExpedienteBean);
                         return detalleExpedienteBean;
 
-                        //return invalido
                     }
-                }
+                } else {
+                    /* Here */
+                    if (perfil.getCodigo().equals(Constantes.PERFIL_USUARIO_FINAL)) {
+                        List<Documento> documentos = expediente.getDocumentos();
+                        List<List<CampoPorDocumento>> totalCampos = new ArrayList<List<CampoPorDocumento>>();
+                        for (Documento documento : documentos) {
+                            totalCampos.add(revisarExpedienteService.obtenerCamposPorDocumento(documento));
+                        }
+                        detalleExpedienteBean.setCampos(totalCampos);
 
-                cleanResponse(detalleExpedienteBean);
-                return detalleExpedienteBean;
+                        List<Boton> listaBotones = revisarExpedienteService.obtenerBotones(expediente, perfil, false,
+                                expediente.getEstado());
+                        detalleExpedienteBean.setBotones(listaBotones);
+                        if (expediente.getDocumentoLegal() != null) {
+                            detalleExpedienteBean
+                                    .setEstadoDl(AppUtil.getNombreEstadoDL(expediente.getDocumentoLegal().getEstado()));
+                        }
+                        quitarBotonSeguridad(usuario, detalleExpedienteBean, listaBotones);
+                        cleanResponse(detalleExpedienteBean);
+                        return detalleExpedienteBean;
+                        // return
+                    }
+                    cleanResponse(detalleExpedienteBean);
+                    return detalleExpedienteBean;
+
+                    // return invalido
+                }
             }
+
+            cleanResponse(detalleExpedienteBean);
+            return detalleExpedienteBean;
+        }
 
         return detalleExpedienteBean;
     }
@@ -842,7 +924,6 @@ public class RevisarBuscarDocumentoServiceImpl implements RevisarBuscarDocumento
         HcAdenda adendaFormateada = detalleExpedienteBean.getExpediente().getDocumentoLegal().getAdenda();
         Traza trazaFormateada = detalleExpedienteBean.getTraza();
         List<Documento> documentosFormateado = new ArrayList<>();
-
 
         for (int i = 0; i < detalleExpedienteBean.getExpediente().getDocumentos().size(); i++) {
 
@@ -864,20 +945,20 @@ public class RevisarBuscarDocumentoServiceImpl implements RevisarBuscarDocumento
         detalleExpedienteBean.setDocumentos(documentosFormateado);
         detalleExpedienteBean.setTraza(trazaFormateada);
         detalleExpedienteBean.setObsTraza(trazaFormateada.getObservacion());
-        //Expediente limpio
+        // Expediente limpio
         expedienteFormateado.setDocumentoLegal(null);
         expedienteFormateado.setDocumentos(null);
 
-        //DocumentoLegal limpio
+        // DocumentoLegal limpio
         hcDocumentoLegalFormateado.setExpediente(null);
 
-        //Contrato limpio
+        // Contrato limpio
         if (contratoFormateado != null) {
             contratoFormateado.setDocumentoLegal(null);
             hcDocumentoLegalFormateado.setContrato(contratoFormateado);
         }
 
-        //Adenda limpio
+        // Adenda limpio
         if (adendaFormateada != null) {
             HcContrato contratoAdendaFormateado = adendaFormateada.getContrato();
             contratoAdendaFormateado.setDocumentoLegal(null);
@@ -886,7 +967,7 @@ public class RevisarBuscarDocumentoServiceImpl implements RevisarBuscarDocumento
             detalleExpedienteBean.setContrato(null);
         }
 
-        //Traza limpio
+        // Traza limpio
         trazaFormateada.setExpediente(null);
     }
 
@@ -910,13 +991,13 @@ public class RevisarBuscarDocumentoServiceImpl implements RevisarBuscarDocumento
         return false;
     }
 
-    private void quitarBotonSeguridad(Usuario usuario, DetalleExpedienteBean detalleContratoBean, List<Boton> listaBotones) {
+    private void quitarBotonSeguridad(Usuario usuario, DetalleExpedienteBean detalleContratoBean,
+            List<Boton> listaBotones) {
 
         List<Rol> rolesUsuario = rolRepository.buscarActivosPorUsuario(usuario.getId());
         List<Parametro> rolesSeguridad = parametroRepository.obtenerPorTipo(Constantes.TIPO_PARAMETRO_ROL_SEGURIDAD);
         boolean tieneRolSeguridad = false;
-        outerloop:
-        for (Rol rolUsuario : rolesUsuario) {
+        outerloop: for (Rol rolUsuario : rolesUsuario) {
             LOGGER.info("ROL USUARIO nombre: " + rolUsuario.getNombre());
             LOGGER.info("ROL USUARIO SCA: " + rolUsuario.getCodigoSCA());
             for (Parametro rolSeguridad : rolesSeguridad) {
@@ -930,23 +1011,43 @@ public class RevisarBuscarDocumentoServiceImpl implements RevisarBuscarDocumento
 
         LOGGER.info("TIENE ROL REGURIDAD: " + tieneRolSeguridad);
 
-        List<Boton> listaBotonesNew = new ArrayList<>();
+        LOGGER.info("=== ANÁLISIS FILTRADO SEGURIDAD ===");
+        LOGGER.info("Botones ANTES del filtro de seguridad: " + listaBotones.size());
+        for (Boton boton : listaBotones) {
+            LOGGER.info("- Botón: " + boton.getNombre() + ", Parámetro: " + boton.getParametro());
+        }
 
+        List<Boton> listaBotonesNew = new ArrayList<>();
         listaBotonesNew.addAll(listaBotones);
 
         if (!tieneRolSeguridad) {
+            LOGGER.info("Usuario NO tiene rol de seguridad, eliminando botones con parámetro: "
+                    + Constantes.SEGURIDAD_NOMBRE_PARAMETRO);
             for (Boton boton : listaBotones) {
-                if (boton.getParametro().equals(Constantes.SEGURIDAD_NOMBRE_PARAMETRO)) {
+                if (boton.getParametro() != null
+                        && boton.getParametro().equals(Constantes.SEGURIDAD_NOMBRE_PARAMETRO)) {
+                    LOGGER.info(
+                            "❌ ELIMINANDO botón: " + boton.getNombre() + " (parámetro: " + boton.getParametro() + ")");
                     listaBotonesNew.remove(boton);
                 }
             }
+        } else {
+            LOGGER.info("Usuario SÍ tiene rol de seguridad, manteniendo todos los botones");
         }
+
+        LOGGER.info("Botones DESPUÉS del filtro de seguridad: " + listaBotonesNew.size());
+        for (Boton boton : listaBotonesNew) {
+            LOGGER.info("- Botón final: " + boton.getNombre());
+        }
+
         detalleContratoBean.setBotones(listaBotonesNew);
     }
 
-    private void agregarBotonFirmaElectronica(DetalleExpedienteBean detalleContratoBean, List<Boton> listaBotones, Character estadoDocumentoLegal, String flagFirmaEletronica) {
+    private void agregarBotonFirmaElectronica(DetalleExpedienteBean detalleContratoBean, List<Boton> listaBotones,
+            Character estadoDocumentoLegal, String flagFirmaEletronica) {
 
-        if (estadoDocumentoLegal.equals(Constantes.ESTADO_HC_ENVIADO_FIRMA) && flagFirmaEletronica.equals(Constantes.FLAG_EXPEDIENTE_SIN_FIRMA_ELECTRONICA)) {
+        if (estadoDocumentoLegal.equals(Constantes.ESTADO_HC_ENVIADO_FIRMA)
+                && flagFirmaEletronica.equals(Constantes.FLAG_EXPEDIENTE_SIN_FIRMA_ELECTRONICA)) {
             listaBotones.add(0, botonRepository.obtenerBotonPorUrl(Constantes.FIRMA_ELECTRONICA_BTN_URL));
             detalleContratoBean.setBotones(listaBotones);
         }

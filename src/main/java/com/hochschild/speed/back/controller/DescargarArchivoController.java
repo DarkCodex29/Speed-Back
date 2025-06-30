@@ -20,7 +20,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.nio.file.Files;
+import java.security.MessageDigest;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -297,6 +299,150 @@ public class DescargarArchivoController {
         } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
             throw new RuntimeException(e);
+        }
+    }
+
+    @ResponseBody
+    @RequestMapping(value = "/publico/{idExpediente}/{idArchivo}/{hash}", method = RequestMethod.GET)
+    public void descargarArchivoPublico(@PathVariable("idArchivo") Integer idArchivo,
+            @PathVariable("idExpediente") Integer idExpediente,
+            @PathVariable("hash") String hash,
+            final HttpServletResponse httpServletResponse) {
+
+        try {
+            LOGGER.info("Descarga pública - IdExpediente: " + idExpediente + ", IdArchivo: " + idArchivo);
+
+            // Validar hash (sin expiración)
+            String hashEsperado = generarHashDescarga(idExpediente, idArchivo);
+            if (!hash.equals(hashEsperado)) {
+                LOGGER.error("Hash inválido para descarga pública");
+                httpServletResponse.sendError(HttpServletResponse.SC_FORBIDDEN, "Hash inválido");
+                return;
+            }
+
+            // Descargar archivo (misma lógica que método privado)
+            Archivo archivo = revisarDocumentoService.obtenerArchivo(idArchivo);
+            LOGGER.info("Archivo obtenido para descarga pública: " + (archivo != null ? archivo.getNombre() : "null"));
+
+            if (archivo != null) {
+                String contentType = null;
+                InputStream in = null;
+                if (alfrescoConfig.getHabilitado()) {
+                    Map<String, Object> file = alfrescoService.obtenerArchivo(archivo, null);
+                    if (file != null) {
+                        contentType = (String) file.get("mime");
+                        in = (InputStream) file.get("stream");
+                    }
+                } else if (!AppUtil.checkNullOrEmpty(archivo.getRutaLocal())) {
+                    File file = new File(archivo.getRutaLocal());
+                    try {
+                        contentType = Files.probeContentType(file.toPath());
+                        in = new FileInputStream(file);
+                    } catch (IOException e) {
+                        LOGGER.info("Error leyendo archivo local", e);
+                    }
+                }
+                if (contentType != null && in != null) {
+                    httpServletResponse.setHeader("Content-Disposition", "filename=\"" + archivo.getNombre() + "\"");
+                    LOGGER.info("Content-Type: [" + contentType + "]");
+                    httpServletResponse.setContentType(contentType);
+                    OutputStream out;
+                    try {
+                        out = httpServletResponse.getOutputStream();
+                        int read = 0;
+                        byte[] bytes = new byte[1024];
+
+                        while ((read = in.read(bytes)) != -1) {
+                            out.write(bytes, 0, read);
+                        }
+
+                        in.close();
+                        out.flush();
+                        out.close();
+                    } catch (IOException e) {
+                        LOGGER.info("No se pudo descargar el archivo", e);
+                        try {
+                            httpServletResponse.sendError(HttpServletResponse.SC_NOT_FOUND);
+                        } catch (IOException ioe) {
+                            LOGGER.info("Error enviando respuesta", ioe);
+                        }
+                    }
+                } else {
+                    LOGGER.error("ContentType o InputStream es null");
+                    try {
+                        httpServletResponse.sendError(HttpServletResponse.SC_NOT_FOUND);
+                    } catch (IOException e) {
+                        LOGGER.info("Error enviando respuesta", e);
+                    }
+                }
+            } else {
+                LOGGER.error("Archivo no encontrado con ID: " + idArchivo);
+                try {
+                    httpServletResponse.sendError(HttpServletResponse.SC_NOT_FOUND);
+                } catch (IOException e) {
+                    LOGGER.error("Error enviando respuesta de archivo no encontrado", e);
+                }
+            }
+        } catch (Exception e) {
+            LOGGER.error("Error inesperado en descarga pública", e);
+            try {
+                httpServletResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            } catch (IOException ioe) {
+                LOGGER.error("Error enviando respuesta de error interno", ioe);
+            }
+        }
+    }
+
+    @ResponseBody
+    @RequestMapping(value = "/generarUrlSegura", method = RequestMethod.POST)
+    public Map<String, String> generarUrlSegura(@RequestBody Map<String, Integer> request) {
+        try {
+            Integer idExpediente = request.get("idExpediente");
+            Integer idArchivo = request.get("idArchivo");
+
+            LOGGER.info("Generando URL segura - IdExpediente: " + idExpediente + ", IdArchivo: " + idArchivo);
+
+            String hash = generarHashDescarga(idExpediente, idArchivo);
+
+            // Construir URL base desde el request
+            String baseUrl = "https://10.30.44.7/speed-back-demo"; // TODO: hacer configurable
+            String urlSegura = baseUrl + "/descargarArchivo/publico/" + idExpediente + "/" + idArchivo + "/" + hash;
+
+            Map<String, String> response = new HashMap<>();
+            response.put("url", urlSegura);
+
+            LOGGER.info("URL segura generada exitosamente");
+            return response;
+
+        } catch (Exception e) {
+            LOGGER.error("Error generando URL segura", e);
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Error generando URL segura");
+            return errorResponse;
+        }
+    }
+
+    private String generarHashDescarga(Integer idExpediente, Integer idArchivo) {
+        try {
+            String secretKey = "SPEED_DOWNLOAD_SECRET_2024"; // TODO: mover a configuración
+            String dataToHash = idExpediente + "-" + idArchivo + "-" + secretKey;
+
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hashBytes = digest.digest(dataToHash.getBytes("UTF-8"));
+
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hashBytes) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) {
+                    hexString.append('0');
+                }
+                hexString.append(hex);
+            }
+
+            return hexString.toString();
+        } catch (Exception e) {
+            LOGGER.error("Error generando hash", e);
+            throw new RuntimeException("Error generando hash", e);
         }
     }
 }

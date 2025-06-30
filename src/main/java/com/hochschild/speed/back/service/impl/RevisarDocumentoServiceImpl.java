@@ -37,8 +37,9 @@ public class RevisarDocumentoServiceImpl implements RevisarDocumentoService {
     private final HcTipoContratoConfiguracionRepository hcTipoContratoConfiguracionRepository;
     private final NumeracionRepository numeracionRepository;
     private final DocumentoDao documentoDao;
-private final BotonDAO botonDAO;
+    private final BotonDAO botonDAO;
     private final PerfilRepository perfilRepository;
+
     @Autowired
     public RevisarDocumentoServiceImpl(
             DocumentoRepository documentoRepository,
@@ -84,16 +85,17 @@ private final BotonDAO botonDAO;
     }
 
     @Override
-    public RevisarDocumentoBean obtenerDocumento(Integer idUsuario, Integer idDocumento, Boolean soloLectura, Integer idPerfil) {
+    public RevisarDocumentoBean obtenerDocumento(Integer idUsuario, Integer idDocumento, Boolean soloLectura,
+            Integer idPerfil) {
         Usuario usuario = usuarioRepository.findById(idUsuario);
         Perfil perfilSesion = perfilRepository.findById(idPerfil);
-        LOGGER.info("SESSION ID: "+perfilSesion.getId() + " COD: "+ perfilSesion.getCodigo());
+        LOGGER.info("SESSION ID: " + perfilSesion.getId() + " COD: " + perfilSesion.getCodigo());
         Documento documento = documentoRepository.findById(idDocumento);
         List<CampoPorDocumento> campos = campoPorDocumentoRepository.getCamposPorDocumento(idDocumento);
         List<Archivo> archivos = obtenerArchivosxDocumento(documento);
-        for(Archivo archivo : archivos){
+        for (Archivo archivo : archivos) {
             archivo.setDocumento(null);
-            for(Version version : archivo.getVersions()){
+            for (Version version : archivo.getVersions()) {
                 version.setArchivo(null);
             }
 
@@ -102,44 +104,47 @@ private final BotonDAO botonDAO;
         revisarDocumentoBean.setCampos(campos);
         // Verificar si debe mostrar solo el último archivo
         boolean mostrarSoloUltimoArchivo = false;
-        
+
         // Caso 1: Estado ENVIADO_VISADO para contratos, adendas y borradores
         if (documento.getExpediente().getDocumentoLegal().getEstado().equals(Constantes.ESTADO_HC_ENVIADO_VISADO) &&
                 (documento.getTipoDocumento().getId().equals(Integer.valueOf(Constantes.ID_TIPO_DOCUMENTO_CONTRATO)) ||
-                        documento.getTipoDocumento().getId().equals(Integer.valueOf(Constantes.ID_TIPO_DOCUMENTO_ADENDA)) ||
-                        documento.getTipoDocumento().getId().equals(Integer.valueOf(Constantes.ID_TIPO_DOCUMENTO_BORRADORES)))) {
+                        documento.getTipoDocumento().getId()
+                                .equals(Integer.valueOf(Constantes.ID_TIPO_DOCUMENTO_ADENDA))
+                        ||
+                        documento.getTipoDocumento().getId()
+                                .equals(Integer.valueOf(Constantes.ID_TIPO_DOCUMENTO_BORRADORES)))) {
             mostrarSoloUltimoArchivo = true;
         }
-        
+
         // Caso 2: Para documentos tipo BORRADORES, aplicar filtro por roles
         if (documento.getTipoDocumento().getId().equals(Integer.valueOf(Constantes.ID_TIPO_DOCUMENTO_BORRADORES))) {
             // Verificar roles del usuario
             List<Rol> roles = rolRepository.buscarActivosPorUsuario(usuario.getId());
             boolean tieneRolPrivilegiado = false;
-            
+
             if (roles != null && !roles.isEmpty()) {
                 for (Rol rol : roles) {
-                    if (rol.getCodigoSCA() != null && 
-                        (rol.getCodigoSCA().equals("ZSLG:RESP_LEGAL:HOC") ||
-                         rol.getCodigoSCA().equals("ZSLG:ADMINISTRADORSISTEMA:"))) {
+                    if (rol.getCodigoSCA() != null &&
+                            (rol.getCodigoSCA().equals("ZSLG:RESP_LEGAL:HOC") ||
+                                    rol.getCodigoSCA().equals("ZSLG:ADMINISTRADORSISTEMA:"))) {
                         tieneRolPrivilegiado = true;
                         break;
                     }
                 }
             }
-            
+
             // Si NO tiene rol privilegiado, mostrar solo último archivo
             if (!tieneRolPrivilegiado) {
                 mostrarSoloUltimoArchivo = true;
             }
         }
-        
+
         if (mostrarSoloUltimoArchivo && !archivos.isEmpty()) {
             List<Archivo> archivoReciente = new ArrayList<>();
             archivoReciente.add(archivos.get(0));
-            for(Archivo archivo : archivoReciente){
+            for (Archivo archivo : archivoReciente) {
                 archivo.setDocumento(null);
-                for(Version version : archivo.getVersions()){
+                for (Version version : archivo.getVersions()) {
                     version.setArchivo(null);
                 }
             }
@@ -153,14 +158,15 @@ private final BotonDAO botonDAO;
             UsuarioPorTraza uxt = revisarExpedienteService.obtenerUsuarioPorTraza(traza.getId(), usuario.getId());
             if (uxt == null) {
                 // Verificamos si el usuario esta reemplazando a otro usuario
-                Reemplazo reemplazo = reemplazoRepository.buscarReemplazo(usuario.getId(), documento.getExpediente().getProceso(), null);
+                Reemplazo reemplazo = reemplazoRepository.buscarReemplazo(usuario.getId(),
+                        documento.getExpediente().getProceso(), null);
                 if (reemplazo != null) {
                     uxt = revisarExpedienteService.obtenerUsuarioPorTraza(traza.getId(), reemplazo.getId());
                 }
             }
             boolean responsable = uxt != null;
 
-            //Listados nuevos
+            // Listados nuevos
             List<Boton> ltsBotonesAutomatica = null;
             List<Boton> ltsBotonesAutomaticaContractual = null;
 
@@ -182,27 +188,40 @@ private final BotonDAO botonDAO;
             }
 
             LOGGER.info("--------------- validacion para botones INICIO -------------");
-            LOGGER.info("---------------" + documento.getTipoDocumento().getId().toString() + " -------------" + parametroService.buscarParametroPorTipo(Constantes.PARAMETRO_ID_CONTRATO).get(0).getValor());
-            LOGGER.info("---------------" + documento.getTipoDocumento().getId().toString() + " -------------" + parametroService.buscarParametroPorTipo(Constantes.PARAMETRO_ID_ADENDA).get(0).getValor());
+            LOGGER.info("---------------" + documento.getTipoDocumento().getId().toString() + " -------------"
+                    + parametroService.buscarParametroPorTipo(Constantes.PARAMETRO_ID_CONTRATO).get(0).getValor());
+            LOGGER.info("---------------" + documento.getTipoDocumento().getId().toString() + " -------------"
+                    + parametroService.buscarParametroPorTipo(Constantes.PARAMETRO_ID_ADENDA).get(0).getValor());
 
-            if (documento.getExpediente().getDocumentoLegal().getContrato()!= null){
-                //Botones de contrato
+            if (documento.getExpediente().getDocumentoLegal().getContrato() != null) {
+                // Botones de contrato
                 LOGGER.info("--------------- entra en primera validacion con Parametro ID CONTRATO-------------");
-                String tipoDocumento = documento.getTipoDocumento().getNombre().toString().toLowerCase(); // Convertir a minúsculas para evitar problemas de mayúsculas/minúsculas
+                String tipoDocumento = documento.getTipoDocumento().getNombre().toString().toLowerCase(); // Convertir a
+                                                                                                          // minúsculas
+                                                                                                          // para evitar
+                                                                                                          // problemas
+                                                                                                          // de
+                                                                                                          // mayúsculas/minúsculas
                 if (tipoDocumento.contains("poderes") || tipoDocumento.contains("solicitud")) {
-                    ltsBotonesDoc = obtenerBotonesDocumentoLegalExceptoParametroDocumento(perfilSesion, documento.getExpediente().getDocumentoLegal().getEstado(), responsable, Constantes.PARAMETRO_CONTRATO);
+                    ltsBotonesDoc = obtenerBotonesDocumentoLegalExceptoParametroDocumento(perfilSesion,
+                            documento.getExpediente().getDocumentoLegal().getEstado(), responsable,
+                            Constantes.PARAMETRO_CONTRATO);
 
-                }else{
-                    ltsBotonesDoc = obtenerBotonesDocumentoLegalExceptoParametro(perfilSesion, documento.getExpediente().getDocumentoLegal().getEstado(), responsable, Constantes.PARAMETRO_ADENDA);
+                } else {
+                    // Para Contrato se usa el mismo grid que Borradores (DocumentoLegal) para
+                    // obtener botones como "Adjuntar Versión Final" y "Anular"
+                    ltsBotonesDoc = obtenerBotonesDocumentoLegalExceptoParametro(perfilSesion,
+                            documento.getExpediente().getDocumentoLegal().getEstado(), responsable,
+                            Constantes.PARAMETRO_CONTRATO);
 
                 }
-
 
                 List<Boton> ltsBotones = new ArrayList<Boton>();
                 for (Boton b : ltsBotonesDoc) {
                     if (b.getUrl().equals("enumerar")) {
                         if (usuario.getArea() != null) {
-                            Numeracion numeracion = numeracionRepository.numeracionPorAreayTipoDocumento(usuario.getArea().getId(), documento.getTipoDocumento().getId());
+                            Numeracion numeracion = numeracionRepository.numeracionPorAreayTipoDocumento(
+                                    usuario.getArea().getId(), documento.getTipoDocumento().getId());
                             if (numeracion != null & documento.getNumero() != null) {
                                 if (documento.getNumero().equals(Constantes.NUMERACION_AUTOMATICA_NO_GENERADA)) {
                                     ltsBotones.add(b);
@@ -213,34 +232,40 @@ private final BotonDAO botonDAO;
                         ltsBotones.add(b);
                     }
                 }
-                // Aplicar validación para botón "Generar Plantilla" 
+                // Aplicar validación para botón "Generar Plantilla"
                 ltsBotones = aplicarValidacionGenerarPlantilla(ltsBotones, usuario);
                 revisarDocumentoBean.setLtsBotonesDoc(ltsBotones);
-               // revisarDocumentoBean.setLtsBotonesDoc(ltsBotonesDoc);
+                // revisarDocumentoBean.setLtsBotonesDoc(ltsBotonesDoc);
 
-            } else
-                if (documento.getTipoDocumento().getId().toString().equals(parametroService.buscarParametroPorTipo(Constantes.PARAMETRO_ID_ADENDA).get(0).getValor())
+            } else if (documento.getTipoDocumento().getId().toString()
+                    .equals(parametroService.buscarParametroPorTipo(Constantes.PARAMETRO_ID_ADENDA).get(0).getValor())
                     || documento.getTipoDocumento().getId().toString().equals(Constantes.PARAMETRO_ID_BORRADOR) // Borradores
-                    || documento.getTipoDocumento().getId().toString().equals(Constantes.PARAMETRO_ID_VERSIONFINAL)//  Version Final
-                ) {
+                    || documento.getTipoDocumento().getId().toString().equals(Constantes.PARAMETRO_ID_VERSIONFINAL)// Version
+                                                                                                                   // Final
+            ) {
 
-                //Botones de adenda automatica
+                // Botones de adenda automatica
                 if (documento.getExpediente().getDocumentoLegal().getAdenda().getHcTipoContrato() != null) {
 
                     HcTipoContratoConfiguracion hcTipoContratoConfiguracion = new HcTipoContratoConfiguracion();
-                    hcTipoContratoConfiguracion = hcTipoContratoConfiguracionRepository.findByIdTipoContrato(documento.getExpediente().getDocumentoLegal().getAdenda().getHcTipoContrato().getId());
+                    hcTipoContratoConfiguracion = hcTipoContratoConfiguracionRepository.findByIdTipoContrato(
+                            documento.getExpediente().getDocumentoLegal().getAdenda().getHcTipoContrato().getId());
 
-                    if (hcTipoContratoConfiguracion.getEsPlantilla().equals(Constantes.ESTADO_PLANTILLA_HABILITADA.toString())) {
+                    if (hcTipoContratoConfiguracion.getEsPlantilla()
+                            .equals(Constantes.ESTADO_PLANTILLA_HABILITADA.toString())) {
 
                         System.out.println("---------------------------------");
                         System.out.println("Botones de unaa adenda con plantilla");
                         System.out.println(hcTipoContratoConfiguracion.getIdRecurso());
                         System.out.println("---------------------------------");
 
-                        //Botones de una adenda con plantilla
-                        ltsBotonesAutomaticaContractual = obtenerBotonAdendaAutomaticaPosicionContractual(perfilSesion, Constantes.RECURSO_PARA_ESTADO, responsable, Constantes.PARAMETRO_CONTRATO, hcTipoContratoConfiguracion.getIdRecurso());
-                        ltsBotonesAutomatica = obtenerBotonesDocumentoLegalExceptoParametro(perfilSesion, documento.getExpediente().getDocumentoLegal().getEstado(), responsable, Constantes.PARAMETRO_CONTRATO);
-
+                        // Botones de una adenda con plantilla
+                        ltsBotonesAutomaticaContractual = obtenerBotonAdendaAutomaticaPosicionContractual(perfilSesion,
+                                Constantes.RECURSO_PARA_ESTADO, responsable, Constantes.PARAMETRO_CONTRATO,
+                                hcTipoContratoConfiguracion.getIdRecurso());
+                        ltsBotonesAutomatica = obtenerBotonesDocumentoLegalExceptoParametro(perfilSesion,
+                                documento.getExpediente().getDocumentoLegal().getEstado(), responsable,
+                                Constantes.PARAMETRO_CONTRATO);
 
                         System.out.println("Cantidad ltsBotonesAutomaticaContractual");
                         System.out.println(ltsBotonesAutomaticaContractual.size());
@@ -261,16 +286,20 @@ private final BotonDAO botonDAO;
                         System.out.println("Botones de una adenda automtica");
                         System.out.println(hcTipoContratoConfiguracion.getEsPlantilla());
                         System.out.println("---------------------------------");
-                        //Botones de una adenda automtica
-                        ltsBotonesDoc = obtenerBotonesDocumentoLegalExceptoParametro(perfilSesion, documento.getExpediente().getDocumentoLegal().getEstado(), responsable, Constantes.PARAMETRO_CONTRATO);
+                        // Botones de una adenda automtica
+                        ltsBotonesDoc = obtenerBotonesDocumentoLegalExceptoParametro(perfilSesion,
+                                documento.getExpediente().getDocumentoLegal().getEstado(), responsable,
+                                Constantes.PARAMETRO_CONTRATO);
                     }
                 } else {
 
                     System.out.println("---------------------------------");
                     System.out.println("Botones de adenda normal");
                     System.out.println("---------------------------------");
-                    //Botones de adenda normal
-                    ltsBotonesDoc = obtenerBotonesDocumentoLegalExceptoParametro(perfilSesion, documento.getExpediente().getDocumentoLegal().getEstado(), responsable, Constantes.PARAMETRO_CONTRATO);
+                    // Botones de adenda normal
+                    ltsBotonesDoc = obtenerBotonesDocumentoLegalExceptoParametro(perfilSesion,
+                            documento.getExpediente().getDocumentoLegal().getEstado(), responsable,
+                            Constantes.PARAMETRO_CONTRATO);
                 }
 
                 // Aplicar validación para botón "Generar Plantilla"
@@ -287,7 +316,8 @@ private final BotonDAO botonDAO;
                 for (Boton b : ltsBotonesDoc) {
                     if (b.getUrl().equals("enumerar")) {
                         if (usuario.getArea() != null) {
-                            Numeracion numeracion = numeracionRepository.numeracionPorAreayTipoDocumento(usuario.getArea().getId(), documento.getTipoDocumento().getId());
+                            Numeracion numeracion = numeracionRepository.numeracionPorAreayTipoDocumento(
+                                    usuario.getArea().getId(), documento.getTipoDocumento().getId());
                             if (numeracion != null & documento.getNumero() != null) {
                                 if (documento.getNumero().equals(Constantes.NUMERACION_AUTOMATICA_NO_GENERADA)) {
                                     ltsBotones.add(b);
@@ -311,24 +341,31 @@ private final BotonDAO botonDAO;
     }
 
     @Override
-    public List<Boton> obtenerBotonAdendaAutomaticaPosicionContractual(Perfil perfilSesion, Character paraEstado, Boolean responsable, String parametro, Integer idRecurso) {
-        return botonDAO.getBotonAdendaAutomaticaPosicionContractual(perfilSesion, Constantes.TIPO_DOCUMENTO_LEGAL, null, paraEstado, responsable, parametro, idRecurso);
+    public List<Boton> obtenerBotonAdendaAutomaticaPosicionContractual(Perfil perfilSesion, Character paraEstado,
+            Boolean responsable, String parametro, Integer idRecurso) {
+        return botonDAO.getBotonAdendaAutomaticaPosicionContractual(perfilSesion, Constantes.TIPO_DOCUMENTO_LEGAL, null,
+                paraEstado, responsable, parametro, idRecurso);
     }
 
     @Override
-    public List<Boton> obtenerBotonesDocumentoLegalExceptoParametro(Perfil perfilSesion, Character paraEstado, Boolean responsable, String parametro) {
-        return botonDAO.buscarPorPerfilGridExceptoParametro(perfilSesion, Constantes.TIPO_DOCUMENTO_LEGAL, null, paraEstado, responsable, parametro);
+    public List<Boton> obtenerBotonesDocumentoLegalExceptoParametro(Perfil perfilSesion, Character paraEstado,
+            Boolean responsable, String parametro) {
+        return botonDAO.buscarPorPerfilGridExceptoParametro(perfilSesion, Constantes.TIPO_DOCUMENTO_LEGAL, null,
+                paraEstado, responsable, parametro);
     }
 
     @Override
-    public List<Boton> obtenerBotonesDocumentoLegalExceptoParametroDocumento(Perfil perfilSesion, Character paraEstado, Boolean responsable, String parametro) {
-        return botonDAO.buscarPorPerfilGridExceptoParametro(perfilSesion, "Documento", null, paraEstado, responsable, parametro);
+    public List<Boton> obtenerBotonesDocumentoLegalExceptoParametroDocumento(Perfil perfilSesion, Character paraEstado,
+            Boolean responsable, String parametro) {
+        return botonDAO.buscarPorPerfilGridExceptoParametro(perfilSesion, "Documento", null, paraEstado, responsable,
+                parametro);
     }
 
     @Override
     public List<Boton> obtenerBotones(Perfil perfil, Character paraEstado, Boolean responsable) {
         return botonDAO.buscarPorPerfilGrid(perfil, Constantes.GRID_DOCUMENTO, paraEstado);
     }
+
     private double obtenerMaximoTamanioArchivo() {
         double mb = cydocConfig.getTamanioMaximoBytes();
         LOGGER.info("tamanio de maximo en Bytes :" + mb);
@@ -337,6 +374,7 @@ private final BotonDAO botonDAO;
         DecimalFormat df = new DecimalFormat("#.##");
         return Double.parseDouble(df.format(mb));
     }
+
     @Override
     public List<Archivo> obtenerArchivosxDocumento(Documento documento) {
         List<Archivo> archivos = archivoRepository.obtenerPorDocumento(documento.getId());
@@ -355,7 +393,7 @@ private final BotonDAO botonDAO;
 
             for (int i = 0; i < versiones.size(); i++) {
                 Version version = versiones.get(i);
-                VersionArchivo va  = new VersionArchivo();
+                VersionArchivo va = new VersionArchivo();
                 va.setNumeroVersion(version.getNumeroVersion());
                 if (usuarioRepository.obtenerPorUsuario(version.getAutor()) != null) {
                     va.setAutor(usuarioRepository.obtenerPorUsuario(version.getAutor()).getLabel());
@@ -373,7 +411,8 @@ private final BotonDAO botonDAO;
     }
 
     /**
-     * Aplica validación para botón "Generar Plantilla" - Solo para Abogado, Abogado Responsable y Administrador
+     * Aplica validación para botón "Generar Plantilla" - Solo para Abogado, Abogado
+     * Responsable y Administrador
      */
     private List<Boton> aplicarValidacionGenerarPlantilla(List<Boton> botones, Usuario usuario) {
         if (botones == null || botones.isEmpty()) {
@@ -383,35 +422,42 @@ private final BotonDAO botonDAO;
         // Verificar si el usuario tiene los roles permitidos
         List<Rol> roles = rolRepository.buscarActivosPorUsuario(usuario.getId());
         boolean puedeGenerarPlantilla = false;
-        
+
         if (roles != null && !roles.isEmpty()) {
             for (Rol rol : roles) {
-                if (rol.getCodigoSCA() != null && 
-                    (rol.getCodigoSCA().equals("ZSLG:RESP_LEGAL:HOC") ||
-                     rol.getCodigoSCA().equals("ZSLG:ADMINISTRADORSISTEMA:"))) {
+                if (rol.getCodigoSCA() != null &&
+                        (rol.getCodigoSCA().equals("ZSLG:RESP_LEGAL:HOC") ||
+                                rol.getCodigoSCA().equals("ZSLG:ADMINISTRADORSISTEMA:"))) {
                     puedeGenerarPlantilla = true;
                     break;
                 }
             }
         }
-        
+
         // Si no puede generar plantilla, filtrar los botones correspondientes
         if (!puedeGenerarPlantilla) {
             botones.removeIf(boton -> {
                 String url = boton.getUrl();
                 String parametroBoton = boton.getParametro();
                 String nombreBoton = boton.getNombre();
-                
+
                 // Filtrar botones de "Generar Plantilla"
-                return (url != null && url.toLowerCase().contains("generar") && 
-                        (url.toLowerCase().contains("plantilla") || url.toLowerCase().contains("contrato") || url.toLowerCase().contains("adenda"))) ||
-                       (parametroBoton != null && parametroBoton.toLowerCase().contains("generar") && 
-                        (parametroBoton.toLowerCase().contains("plantilla") || parametroBoton.toLowerCase().contains("contrato") || parametroBoton.toLowerCase().contains("adenda"))) ||
-                       (nombreBoton != null && nombreBoton.toLowerCase().contains("generar") && 
-                        (nombreBoton.toLowerCase().contains("plantilla") || nombreBoton.toLowerCase().contains("contrato") || nombreBoton.toLowerCase().contains("adenda")));
+                return (url != null && url.toLowerCase().contains("generar") &&
+                        (url.toLowerCase().contains("plantilla") || url.toLowerCase().contains("contrato")
+                                || url.toLowerCase().contains("adenda")))
+                        ||
+                        (parametroBoton != null && parametroBoton.toLowerCase().contains("generar") &&
+                                (parametroBoton.toLowerCase().contains("plantilla")
+                                        || parametroBoton.toLowerCase().contains("contrato")
+                                        || parametroBoton.toLowerCase().contains("adenda")))
+                        ||
+                        (nombreBoton != null && nombreBoton.toLowerCase().contains("generar") &&
+                                (nombreBoton.toLowerCase().contains("plantilla")
+                                        || nombreBoton.toLowerCase().contains("contrato")
+                                        || nombreBoton.toLowerCase().contains("adenda")));
             });
         }
-        
+
         return botones;
     }
 }

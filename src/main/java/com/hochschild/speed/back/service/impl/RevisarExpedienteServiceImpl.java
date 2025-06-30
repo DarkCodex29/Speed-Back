@@ -546,18 +546,23 @@ public class RevisarExpedienteServiceImpl implements RevisarExpedienteService {
 
         LOGGER.info("Clave matriz: " + claveMatriz);
 
-        // === LÓGICA ESPECIAL PARA ADMINISTRADORES EN VENCIDO ===
-        // Si es administrador actuando como ABOGADO_RESPONSABLE en VENCIDO,
-        // usar los mismos botones que SOLICITANTE_VENCIDO
-        if ("ABOGADO_RESPONSABLE_VENCIDO".equals(claveMatriz)) {
+        // === LÓGICA ESPECIAL PARA ADMINISTRADORES EN TODOS LOS ESTADOS ===
+        // Si es administrador actuando como ABOGADO_RESPONSABLE o VISADOR,
+        // usar los mismos botones que SOLICITANTE en el mismo estado
+        if (claveMatriz.startsWith("ABOGADO_RESPONSABLE_") || claveMatriz.startsWith("VISADOR_")) {
             List<Rol> roles = rolRepository.buscarActivosPorUsuario(usuario.getId());
             boolean tieneRolAdministrador = roles.stream()
-                    .anyMatch(rol -> Constantes.CODIGO_ROL_ABOGADO.equals(rol.getCodigo()));
-            boolean esEstadoVencido = "VENCIDO".equals(codigoEstado);
+                    .anyMatch(rol -> "administrador".equals(rol.getCodigo()));
 
-            if (tieneRolAdministrador && esEstadoVencido) {
-                claveMatriz = "SOLICITANTE_VENCIDO";
-                LOGGER.info("🔄 CASO ESPECIAL: Administrador en VENCIDO → Usando matriz SOLICITANTE_VENCIDO");
+            if (tieneRolAdministrador) {
+                String estadoActual;
+                if (claveMatriz.startsWith("ABOGADO_RESPONSABLE_")) {
+                    estadoActual = claveMatriz.replace("ABOGADO_RESPONSABLE_", "");
+                } else {
+                    estadoActual = claveMatriz.replace("VISADOR_", "");
+                }
+                claveMatriz = "SOLICITANTE_" + estadoActual;
+                LOGGER.info("🔄 CASO ESPECIAL: Administrador → Usando matriz " + claveMatriz);
             }
         }
 
